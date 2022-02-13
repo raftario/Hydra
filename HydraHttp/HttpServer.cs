@@ -122,7 +122,10 @@ namespace HydraHttp
                             else if (headerResult.Finished) break;
                         }
 
-                        var request = new HttpRequest(startLine.Value.Method, startLine.Value.Uri, headers, reader.Body, client.RemoteEndPoint, cancellationToken);
+                        Stream body = reader.Body;
+                        if (headers.TryGetValue("Content-Length", out var cls) && int.TryParse(cls, out var cl)) body = new CappedReadStream(body, cl);
+
+                        var request = new HttpRequest(startLine.Value.Method, startLine.Value.Uri, headers, body, client.RemoteEndPoint, cancellationToken);
                         var response = await handler(request);
 
                         if (response is not null)

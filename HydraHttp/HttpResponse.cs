@@ -9,7 +9,7 @@ namespace HydraHttp
         public HttpHeaders Headers { get; } = new();
         public Stream? Body { get; set; }
 
-        public HttpResponse(int status, string reason, Stream? body = null)
+        public HttpResponse(int status, Stream? body = null, string reason = "")
         {
             Status = status;
             Reason = reason;

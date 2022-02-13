@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace HydraHttp
 {
-    public class CappedReadStream : Stream
+    internal class CappedReadStream : Stream
     {
         private readonly Stream stream;
         private readonly int length;
@@ -13,7 +13,7 @@ namespace HydraHttp
 
         private int Count(int count) => Math.Min(count, length - n);
 
-        public CappedReadStream(Stream stream, int length)
+        internal CappedReadStream(Stream stream, int length)
         {
             this.stream = stream;
             this.length = length;
