@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace HydraHttp
 {
-    internal class CappedReadStream : Stream
+    internal class HttpBodyStream : Stream
     {
         private readonly Stream stream;
         private readonly int length;
@@ -13,7 +13,7 @@ namespace HydraHttp
 
         private int Count(int count) => Math.Min(count, length - n);
 
-        internal CappedReadStream(Stream stream, int length)
+        internal HttpBodyStream(Stream stream, int length)
         {
             this.stream = stream;
             this.length = length;
@@ -24,9 +24,7 @@ namespace HydraHttp
         public override bool CanWrite => false;
 
         public override long Length => length;
-        public override long Position { get => n; set => throw new NotImplementedException(); }
-
-        public override void Flush() => stream.Flush();
+        public override long Position { get => n; set => throw new NotSupportedException(); }
 
         public override int Read(byte[] buffer, int offset, int count)
         {
@@ -65,9 +63,10 @@ namespace HydraHttp
             return read;
         }
 
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotImplementedException();
-        public override void SetLength(long value) => throw new NotImplementedException();
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotImplementedException();
+        public override void Flush() => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 
         protected override void Dispose(bool disposing) => stream.Dispose();
         public override ValueTask DisposeAsync() => stream.DisposeAsync();

@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace HydraHttp.Core.Tests
+namespace HydraHttp.OneDotOne.Tests
 {
     internal static class Util
     {

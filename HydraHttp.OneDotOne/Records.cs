@@ -1,4 +1,4 @@
-﻿namespace HydraHttp.Core
+﻿namespace HydraHttp.OneDotOne
 {
     public readonly record struct StartLine(string Method, string Uri, int Version);
     public readonly record struct StatusLine(int Status, string Reason);

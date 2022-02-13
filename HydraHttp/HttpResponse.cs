@@ -1,4 +1,7 @@
-﻿using System.IO;
+﻿using HydraHttp.OneDotOne;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace HydraHttp
 {
@@ -14,6 +17,16 @@ namespace HydraHttp
             Status = status;
             Reason = reason;
             Body = body;
+        }
+    }
+
+    public static class HttpWriterExtensions
+    {
+        public static async ValueTask WriteResponse(this HttpWriter writer, HttpResponse response, CancellationToken cancellationToken = default)
+        {
+            writer.WriteStatusLine(new(response.Status, response.Reason));
+            foreach (var (name, values) in response.Headers) writer.WriteHeader(new(name, string.Join(',', values)));
+            await writer.Send(response.Body ?? new HttpEmptyBodyStream(), cancellationToken);
         }
     }
 }

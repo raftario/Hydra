@@ -1,4 +1,4 @@
-﻿namespace HydraHttp.Core
+﻿namespace HydraHttp.OneDotOne
 {
     // https://github.com/seanmonstar/httparse
     static internal class HttpCharacters

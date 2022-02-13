@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HydraHttp.Core.Tests
+namespace HydraHttp.OneDotOne.Tests
 {
     [TestClass]
     public class HttpWriterTests

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HydraHttp.Core;
+using System;
 using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -6,7 +7,7 @@ using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace HydraHttp.Core
+namespace HydraHttp.OneDotOne
 {
     public class HttpReader
     {
@@ -117,16 +118,9 @@ namespace HydraHttp.Core
             version = default;
 
             if (!SkipEmptyLines(ref bytes)) return false;
-            bytes = bytes.Rest().ByteWalker();
-
             if (!ParseToken(ref bytes, out method)) return false;
-            bytes = bytes.Rest().ByteWalker();
-
             if (!ParseUri(ref bytes, out uri)) return false;
-            bytes = bytes.Rest().ByteWalker();
-
             if (!ParseVersion(ref bytes, out version)) return false;
-            bytes = bytes.Rest().ByteWalker();
 
             return ParseNewLine(ref bytes);
         }
@@ -142,8 +136,10 @@ namespace HydraHttp.Core
                     if (b != '\n') throw new InvalidNewlineException();
                 }
                 else if (b == '\n') bytes.Bump();
-                else return true;
+                else break;
             }
+
+            bytes.Consume();
             return true;
         }
 
@@ -153,7 +149,7 @@ namespace HydraHttp.Core
             {
                 if (b == ' ')
                 {
-                    token = bytes.Consumed(-1).AsAscii();
+                    token = bytes.Read(-1).AsAscii();
                     return true;
                 }
                 else if (!b.IsAsciiToken()) throw new InvalidTokenException();
@@ -169,7 +165,7 @@ namespace HydraHttp.Core
             {
                 if (b == ' ')
                 {
-                    uri = bytes.Consumed(-1).AsAscii();
+                    uri = bytes.Read(-1).AsAscii();
                     return true;
                 }
                 else if (!b.IsAsciiUri()) throw new InvalidUriException();
@@ -217,7 +213,6 @@ namespace HydraHttp.Core
         {
             name = null;
             value = null;
-            ReadOnlySequence<byte>? valueBytes = null;
             byte b;
 
             while (bytes.Next(out b))
@@ -231,7 +226,7 @@ namespace HydraHttp.Core
                 else if (b == '\n') return Status.Finished;
                 else if (b == ':')
                 {
-                    name = bytes.Consumed(-1).AsAscii();
+                    name = bytes.Read(-1).AsAscii();
                     break;
                 }
                 else if (!b.IsAsciiHeaderName()) throw new InvalidHeaderNameException();
@@ -243,8 +238,8 @@ namespace HydraHttp.Core
                 if (b == ' ' || b == '\t') bytes.Bump();
                 else break;
             }
+            bytes.Consume();
 
-            var valueStart = bytes.Position;
             int valueEndOffset = 0;
             while (bytes.Next(out b))
             {
@@ -252,21 +247,20 @@ namespace HydraHttp.Core
                 {
                     if (!bytes.Next(out b)) return Status.Incomplete;
                     else if (b != '\n') throw new InvalidNewlineException();
-                    valueBytes = bytes.Consumed(valueEndOffset - 2);
+                    value = bytes.Read(valueEndOffset - 2).AsAscii();
                     break;
                 }
                 else if (b == '\n')
                 {
-                    valueBytes = bytes.Consumed(valueEndOffset - 1);
+                    value = bytes.Read(valueEndOffset - 1).AsAscii();
                     break;
                 }
                 else if (b == ' ' || b == '\t') valueEndOffset--;
                 else if (!b.IsAsciiHeaderValue()) throw new InvalidHeaderValueException();
                 else valueEndOffset = 0;
             }
-            if (valueBytes is null) return Status.Incomplete;
+            if (value is null) return Status.Incomplete;
 
-            value = valueBytes.Value.Slice(valueStart).AsAscii();
             return Status.Complete;
         }
 

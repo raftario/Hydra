@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace HydraHttp.Core
+namespace HydraHttp.OneDotOne
 {
     public class HttpWriter
     {
