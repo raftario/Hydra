@@ -46,7 +46,7 @@ namespace HydraHttp.Core
 
         public Stream Body => reader.AsStream();
 
-        public async Task<Result<StartLine>> ReadStartLine(CancellationToken cancellationToken = default)
+        public async ValueTask<Result<StartLine>> ReadStartLine(CancellationToken cancellationToken = default)
         {
             while (true)
             {
@@ -77,7 +77,7 @@ namespace HydraHttp.Core
             }
         }
 
-        public async Task<Result<Header>> ReadHeader(CancellationToken cancellationToken = default)
+        public async ValueTask<Result<Header>> ReadHeader(CancellationToken cancellationToken = default)
         {
             while (true)
             {
@@ -153,7 +153,7 @@ namespace HydraHttp.Core
             {
                 if (b == ' ')
                 {
-                    token = bytes.Consumed(-1).AsText();
+                    token = bytes.Consumed(-1).AsAscii();
                     return true;
                 }
                 else if (!b.IsAsciiToken()) throw new InvalidTokenException();
@@ -169,7 +169,7 @@ namespace HydraHttp.Core
             {
                 if (b == ' ')
                 {
-                    uri = bytes.Consumed(-1).AsText();
+                    uri = bytes.Consumed(-1).AsAscii();
                     return true;
                 }
                 else if (!b.IsAsciiUri()) throw new InvalidUriException();
@@ -231,7 +231,7 @@ namespace HydraHttp.Core
                 else if (b == '\n') return Status.Finished;
                 else if (b == ':')
                 {
-                    name = bytes.Consumed(-1).AsText();
+                    name = bytes.Consumed(-1).AsAscii();
                     break;
                 }
                 else if (!b.IsAsciiHeaderName()) throw new InvalidHeaderNameException();
@@ -266,18 +266,21 @@ namespace HydraHttp.Core
             }
             if (valueBytes is null) return Status.Incomplete;
 
-            value = valueBytes.Value.Slice(valueStart).AsText();
+            value = valueBytes.Value.Slice(valueStart).AsAscii();
             return Status.Complete;
         }
 
-        public class InvalidNewlineException : Exception { }
-        public class InvalidTokenException : Exception { }
-        public class InvalidUriException : Exception { }
-        public class InvalidVersionException : Exception { }
-        public class UnsupportedVersionException : Exception { }
-        public class InvalidHeaderNameException : Exception { }
-        public class InvalidHeaderValueException : Exception { }
-        public class StartLineTooLongException : Exception { }
-        public class HeaderTooLongException : Exception { }
+        public abstract class BadRequestException : Exception { }
+        public abstract class NotImplementedException : Exception { }
+
+        public class InvalidNewlineException : BadRequestException { }
+        public class InvalidTokenException : BadRequestException { }
+        public class InvalidUriException : BadRequestException { }
+        public class InvalidVersionException : BadRequestException { }
+        public class UnsupportedVersionException : NotImplementedException { }
+        public class InvalidHeaderNameException : BadRequestException { }
+        public class InvalidHeaderValueException : BadRequestException { }
+        public class StartLineTooLongException : NotImplementedException { }
+        public class HeaderTooLongException : NotImplementedException { }
     }
 }

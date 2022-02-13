@@ -65,7 +65,7 @@ namespace HydraHttp.Core
             writer.Advance(length);
         }
 
-        public async Task Send(Stream body, CancellationToken cancellationToken = default)
+        public async ValueTask Send(Stream body, CancellationToken cancellationToken = default)
         {
             var memory = writer.GetMemory(2);
             memory.Span[0] = (byte)'\r';

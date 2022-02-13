@@ -59,7 +59,7 @@ namespace HydraHttp.Core.Tests
             stream.Write(startLine.AsBytes());
             stream.Position = 0;
 
-            Assert.ThrowsExceptionAsync<HttpReader.InvalidTokenException>(() => reader.ReadStartLine());
+            Assert.ThrowsExceptionAsync<HttpReader.InvalidTokenException>(() => reader.ReadStartLine().AsTask());
         }
 
         [TestMethod]
@@ -69,7 +69,7 @@ namespace HydraHttp.Core.Tests
             stream.Write(startLine.AsBytes());
             stream.Position = 0;
 
-            Assert.ThrowsExceptionAsync<HttpReader.InvalidUriException>(() => reader.ReadStartLine());
+            Assert.ThrowsExceptionAsync<HttpReader.InvalidUriException>(() => reader.ReadStartLine().AsTask());
         }
 
         [TestMethod]
@@ -79,7 +79,7 @@ namespace HydraHttp.Core.Tests
             stream.Write(startLine.AsBytes());
             stream.Position = 0;
 
-            Assert.ThrowsExceptionAsync<HttpReader.InvalidVersionException>(() => reader.ReadStartLine());
+            Assert.ThrowsExceptionAsync<HttpReader.InvalidVersionException>(() => reader.ReadStartLine().AsTask());
         }
 
         [TestMethod]
@@ -90,7 +90,7 @@ namespace HydraHttp.Core.Tests
             stream.Write(startLine.AsBytes());
             stream.Position = 0;
 
-            Assert.ThrowsExceptionAsync<HttpReader.UnsupportedVersionException>(() => reader.ReadStartLine());
+            Assert.ThrowsExceptionAsync<HttpReader.UnsupportedVersionException>(() => reader.ReadStartLine().AsTask());
         }
 
         [TestMethod]
@@ -147,7 +147,7 @@ namespace HydraHttp.Core.Tests
             stream.Write(header.AsBytes());
             stream.Position = 0;
 
-            Assert.ThrowsExceptionAsync<HttpReader.InvalidHeaderNameException>(() => reader.ReadStartLine());
+            Assert.ThrowsExceptionAsync<HttpReader.InvalidHeaderNameException>(() => reader.ReadStartLine().AsTask());
         }
 
         private class RequestReader
@@ -165,8 +165,8 @@ namespace HydraHttp.Core.Tests
 
             internal async Task<bool> Read()
             {
-                var startLineResut = await reader.ReadStartLine();
-                if (!startLineResut.Complete(out startLine)) return false;
+                var startLineResult = await reader.ReadStartLine();
+                if (!startLineResult.Complete(out startLine)) return false;
 
                 while (true)
                 {
