@@ -5,9 +5,10 @@ using System.Threading.Tasks;
 
 namespace HydraHttp
 {
-    internal class HttpEmptyBodyStream : Stream
+    public class HttpEmptyBodyStream : HttpBodyStream
     {
-        internal HttpEmptyBodyStream() { }
+        public static readonly Stream Body = new HttpEmptyBodyStream();
+        private HttpEmptyBodyStream() { }
 
         public override bool CanRead => true;
         public override bool CanSeek => false;
@@ -20,12 +21,6 @@ namespace HydraHttp
         public override int Read(Span<byte> buffer) => 0;
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default) => Task.FromResult(0);
         public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) => ValueTask.FromResult(0);
-
-
-        public override void Flush() => throw new NotSupportedException();
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-        public override void SetLength(long value) => throw new NotSupportedException();
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 
         protected override void Dispose(bool disposing) { }
         public override ValueTask DisposeAsync() => ValueTask.CompletedTask;

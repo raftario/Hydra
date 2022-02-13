@@ -1,4 +1,5 @@
 ﻿using HydraHttp.OneDotOne;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,13 +21,23 @@ namespace HydraHttp
         }
     }
 
-    public static class HttpWriterExtensions
+    public static class WriterExtensions
     {
-        public static async ValueTask WriteResponse(this HttpWriter writer, HttpResponse response, CancellationToken cancellationToken = default)
+        public static async ValueTask<bool> WriteResponse(this HttpWriter writer, HttpResponse response, string requestMethod, CancellationToken cancellationToken = default)
         {
+            var needsClose = response.Headers.TryGetValue("Transfer-Encoding", out var te)
+                && !te.ToString().TrimEnd().EndsWith("chunked", StringComparison.OrdinalIgnoreCase);
+            needsClose = needsClose || !response.Headers.ContainsKey("Content-Length");
+
+            if (requestMethod == "HEAD") response.Body = HttpEmptyBodyStream.Body;
+            else if (requestMethod == "CONNECT" && response.Status >= 200 && response.Status < 300) response.Body = HttpEmptyBodyStream.Body;
+            else if ((response.Status >= 100 && response.Status < 200) || response.Status == 204 || response.Status == 304) response.Body = HttpEmptyBodyStream.Body;
+
             writer.WriteStatusLine(new(response.Status, response.Reason));
-            foreach (var (name, values) in response.Headers) writer.WriteHeader(new(name, string.Join(',', values)));
-            await writer.Send(response.Body ?? new HttpEmptyBodyStream(), cancellationToken);
+            foreach (var (name, values) in response.Headers) writer.WriteHeader(new(name, values));
+            await writer.Send(response.Body ?? HttpEmptyBodyStream.Body, cancellationToken);
+
+            return needsClose;
         }
     }
 }

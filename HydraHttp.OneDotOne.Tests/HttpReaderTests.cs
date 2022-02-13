@@ -1,8 +1,10 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipelines;
 using System.Text;
 using System.Threading.Tasks;
+using TestUtils;
 
 namespace HydraHttp.OneDotOne.Tests
 {
@@ -15,7 +17,7 @@ namespace HydraHttp.OneDotOne.Tests
         public HttpReaderTests()
         {
             stream = new();
-            reader = new(stream);
+            reader = new(PipeReader.Create(stream));
         }
 
         [TestMethod]
@@ -59,7 +61,7 @@ namespace HydraHttp.OneDotOne.Tests
             stream.Write(startLine.AsBytes());
             stream.Position = 0;
 
-            Assert.ThrowsExceptionAsync<HttpReader.InvalidTokenException>(() => reader.ReadStartLine().AsTask());
+            Assert.ThrowsExceptionAsync<InvalidTokenException>(() => reader.ReadStartLine().AsTask());
         }
 
         [TestMethod]
@@ -69,7 +71,7 @@ namespace HydraHttp.OneDotOne.Tests
             stream.Write(startLine.AsBytes());
             stream.Position = 0;
 
-            Assert.ThrowsExceptionAsync<HttpReader.InvalidUriException>(() => reader.ReadStartLine().AsTask());
+            Assert.ThrowsExceptionAsync<InvalidUriException>(() => reader.ReadStartLine().AsTask());
         }
 
         [TestMethod]
@@ -79,7 +81,7 @@ namespace HydraHttp.OneDotOne.Tests
             stream.Write(startLine.AsBytes());
             stream.Position = 0;
 
-            Assert.ThrowsExceptionAsync<HttpReader.InvalidVersionException>(() => reader.ReadStartLine().AsTask());
+            Assert.ThrowsExceptionAsync<InvalidVersionException>(() => reader.ReadStartLine().AsTask());
         }
 
         [TestMethod]
@@ -90,7 +92,7 @@ namespace HydraHttp.OneDotOne.Tests
             stream.Write(startLine.AsBytes());
             stream.Position = 0;
 
-            Assert.ThrowsExceptionAsync<HttpReader.UnsupportedVersionException>(() => reader.ReadStartLine().AsTask());
+            Assert.ThrowsExceptionAsync<UnsupportedVersionException>(() => reader.ReadStartLine().AsTask());
         }
 
         [TestMethod]
@@ -147,7 +149,7 @@ namespace HydraHttp.OneDotOne.Tests
             stream.Write(header.AsBytes());
             stream.Position = 0;
 
-            Assert.ThrowsExceptionAsync<HttpReader.InvalidHeaderNameException>(() => reader.ReadStartLine().AsTask());
+            Assert.ThrowsExceptionAsync<InvalidHeaderNameException>(() => reader.ReadStartLine().AsTask());
         }
 
         private class RequestReader
@@ -233,7 +235,7 @@ namespace HydraHttp.OneDotOne.Tests
             stream.Write(request.AsBytes());
             stream.Position = 0;
 
-            Assert.ThrowsExceptionAsync<HttpReader.InvalidNewlineException>(() => reader.Read());
+            Assert.ThrowsExceptionAsync<InvalidNewlineException>(() => reader.Read());
         }
     }
 }

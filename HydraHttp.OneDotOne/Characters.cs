@@ -1,7 +1,7 @@
 ﻿namespace HydraHttp.OneDotOne
 {
     // https://github.com/seanmonstar/httparse
-    static internal class HttpCharacters
+    static internal class Characters
     {
         private static readonly bool[] uriMap = new[]
         {
@@ -67,5 +67,6 @@
         internal static bool IsAsciiHeaderValue(this byte c) => headerValueMap[c];
 
         internal static bool IsAsciiToken(this byte c) => c > 0x1F && c < 0x7F;
+        internal static bool IsAsciiHexDigit(this byte c) => (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
     }
 }

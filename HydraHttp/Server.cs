@@ -1,8 +1,6 @@
 ﻿using HydraHttp.OneDotOne;
-using Microsoft.Extensions.Primitives;
 using System;
-using System.IO;
-using System.Linq;
+using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -10,20 +8,20 @@ using System.Threading.Tasks;
 
 namespace HydraHttp
 {
-    public class HttpServer : IDisposable
+    public class Server : IDisposable
     {
         public delegate Task<HttpResponse> Handler(HttpRequest request);
 
         private Socket listener;
         private Handler handler;
 
-        public HttpServer(Socket listener, Handler handler)
+        public Server(Socket listener, Handler handler)
         {
             this.listener = listener;
             this.handler = handler;
         }
 
-        public HttpServer(IPEndPoint endpoint, Handler handler)
+        public Server(IPEndPoint endpoint, Handler handler)
         {
             var listener = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             listener.Bind(endpoint);
@@ -32,8 +30,8 @@ namespace HydraHttp
             this.listener = listener;
             this.handler = handler;
         }
-        public HttpServer(IPAddress address, int port, Handler handler) : this(new IPEndPoint(address, port), handler) { }
-        public static async Task<HttpServer> At(string hostname, int port, Handler handler)
+        public Server(IPAddress address, int port, Handler handler) : this(new IPEndPoint(address, port), handler) { }
+        public static async Task<Server> At(string hostname, int port, Handler handler)
         {
             Socket? listener = null;
             SocketException? last = null;
@@ -55,7 +53,7 @@ namespace HydraHttp
             }
 
             return listener is not null
-                ? new HttpServer(listener, handler)
+                ? new Server(listener, handler)
                 : throw last!;
         }
 
@@ -64,44 +62,60 @@ namespace HydraHttp
             while (true)
             {
                 var client = await listener.AcceptAsync(cancellationToken);
-                Task.Run(() => Client(client, handler, cancellationToken));
+                Task.Run(() => Client(client, cancellationToken));
             }
         }
 
-        private static async Task Client(Socket client, Handler handler, CancellationToken cancellationToken)
+        private async Task Client(Socket client, CancellationToken cancellationToken)
         {
             var stream = new NetworkStream(client, true);
-            var reader = new HttpReader(stream);
-            var writer = new HttpWriter(stream);
+
+            var reader = PipeReader.Create(stream);
+            var writer = PipeWriter.Create(stream);
+
+            var httpReader = new HttpReader(reader);
+            var httpWriter = new HttpWriter(writer);
 
             try
             {
                 while (true)
                 {
+                    HttpResponse? response = null;
+                    HttpRequest? request = null;
+
                     try
                     {
-                        var request = await reader.ReadRequest(client, cancellationToken);
+                        request = await httpReader.ReadRequest(client, cancellationToken);
                         if (request is null) return;
 
-                        var response = await handler(request);
+                        response = await handler(request);
                         if (response is null) return;
-                        await writer.WriteResponse(response, cancellationToken);
                     }
-                    catch (HttpReader.BadRequestException)
+                    catch (HttpBadRequestException)
                     {
-                        writer.WriteStatusLine(new(400, "Bad Request"));
-                        writer.WriteHeader(new("Content-Length", "0"));
-                        await writer.Send(new HttpEmptyBodyStream(), cancellationToken);
+                        httpWriter.WriteStatusLine(new(400, "Bad Request"));
+                        httpWriter.WriteHeader(new("Content-Length", "0"));
+                        await httpWriter.Send(HttpEmptyBodyStream.Body, cancellationToken);
+
+                        continue;
                     }
-                    catch (HttpReader.NotImplementedException)
+                    catch (HttpNotImplementedException)
                     {
-                        writer.WriteStatusLine(new(501, "Not Implemented"));
-                        writer.WriteHeader(new("Content-Length", "0"));
-                        await writer.Send(new HttpEmptyBodyStream(), cancellationToken);
+                        httpWriter.WriteStatusLine(new(501, "Not Implemented"));
+                        httpWriter.WriteHeader(new("Content-Length", "0"));
+                        await httpWriter.Send(HttpEmptyBodyStream.Body, cancellationToken);
+
+                        continue;
                     }
+
+                    if (await httpWriter.WriteResponse(response, request.Method, cancellationToken)) return;
                 }
             }
             catch (TaskCanceledException) { }
+            catch (Exception ex)
+            {
+                OnException(ex);
+            }
             finally
             {
                 await stream.DisposeAsync();
@@ -112,5 +126,16 @@ namespace HydraHttp
         {
             listener.Dispose();
         }
+
+        public class ExceptionEventArgs : EventArgs
+        {
+            public Exception Exception { get; }
+            public ExceptionEventArgs(Exception ex) : base()
+            {
+                Exception = ex;
+            }
+        }
+        public event EventHandler<ExceptionEventArgs>? Exception;
+        private void OnException(Exception ex) => Exception?.Invoke(this, new(ex));
     }
 }

@@ -1,7 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
+using System.IO.Pipelines;
 using System.Text;
 using System.Threading.Tasks;
+using TestUtils;
 
 namespace HydraHttp.OneDotOne.Tests
 {
@@ -14,7 +16,7 @@ namespace HydraHttp.OneDotOne.Tests
         public HttpWriterTests()
         {
             stream = new();
-            writer = new(stream);
+            writer = new(PipeWriter.Create(stream));
         }
 
         [TestMethod]

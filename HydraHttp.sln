@@ -19,6 +19,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydraHttp.OneDotOne", "Hydr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydraHttp.OneDotOne.Tests", "HydraHttp.OneDotOne.Tests\HydraHttp.OneDotOne.Tests.csproj", "{9DCB0F74-29B0-462D-BB75-4C417A29DED4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydraHttp.Tests", "HydraHttp.Tests\HydraHttp.Tests.csproj", "{B606497E-0233-44DB-908A-DF19C20C953A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestUtils", "TestUtils\TestUtils.csproj", "{54E743B5-F4CF-4FEC-962B-EB45396ED082}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +49,14 @@ Global
 		{9DCB0F74-29B0-462D-BB75-4C417A29DED4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9DCB0F74-29B0-462D-BB75-4C417A29DED4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9DCB0F74-29B0-462D-BB75-4C417A29DED4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B606497E-0233-44DB-908A-DF19C20C953A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B606497E-0233-44DB-908A-DF19C20C953A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B606497E-0233-44DB-908A-DF19C20C953A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B606497E-0233-44DB-908A-DF19C20C953A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54E743B5-F4CF-4FEC-962B-EB45396ED082}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54E743B5-F4CF-4FEC-962B-EB45396ED082}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54E743B5-F4CF-4FEC-962B-EB45396ED082}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54E743B5-F4CF-4FEC-962B-EB45396ED082}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

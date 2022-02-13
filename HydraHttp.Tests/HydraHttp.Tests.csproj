@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HydraHttp.OneDotOne\HydraHttp.OneDotOne.csproj" />
+    <ProjectReference Include="..\HydraHttp\HydraHttp.csproj" />
     <ProjectReference Include="..\TestUtils\TestUtils.csproj" />
   </ItemGroup>
 

@@ -8,13 +8,13 @@ namespace HydraHttp.OneDotOne
 {
     public class HttpWriter
     {
-        private PipeWriter writer;
+        public readonly PipeWriter Writer;
 
         private const string version = "HTTP/1.1";
 
-        public HttpWriter(Stream stream)
+        public HttpWriter(PipeWriter writer)
         {
-            writer = PipeWriter.Create(stream);
+            Writer = writer;
         }
 
         public void WriteStatusLine(StatusLine statusLine)
@@ -30,7 +30,7 @@ namespace HydraHttp.OneDotOne
             int lfIdx = crIdx + 1;
 
             int length = lfIdx + 1;
-            var memory = writer.GetSpan(length);
+            var memory = Writer.GetSpan(length);
 
             Encoding.ASCII.GetBytes(version, memory[versionIdx..]);
             memory[firstSpaceIdx] = (byte)' ';
@@ -40,7 +40,7 @@ namespace HydraHttp.OneDotOne
             memory[crIdx] = (byte)'\r';
             memory[lfIdx] = (byte)'\n';
 
-            writer.Advance(length);
+            Writer.Advance(length);
         }
 
         public void WriteHeader(Header header)
@@ -53,7 +53,7 @@ namespace HydraHttp.OneDotOne
             int lfIdx = crIdx + 1;
 
             int length = lfIdx + 1;
-            var memory = writer.GetSpan(length);
+            var memory = Writer.GetSpan(length);
 
             Encoding.ASCII.GetBytes(header.Name, memory[nameIdx..]);
             memory[colonIdx] = (byte)':';
@@ -62,18 +62,18 @@ namespace HydraHttp.OneDotOne
             memory[crIdx] = (byte)'\r';
             memory[lfIdx] = (byte)'\n';
 
-            writer.Advance(length);
+            Writer.Advance(length);
         }
 
         public async ValueTask Send(Stream body, CancellationToken cancellationToken = default)
         {
-            var memory = writer.GetMemory(2);
+            var memory = Writer.GetMemory(2);
             memory.Span[0] = (byte)'\r';
             memory.Span[1] = (byte)'\n';
-            writer.Advance(2);
+            Writer.Advance(2);
 
-            await writer.FlushAsync(cancellationToken);
-            await body.CopyToAsync(writer, cancellationToken);
+            await Writer.FlushAsync(cancellationToken);
+            await body.CopyToAsync(Writer, cancellationToken);
         }
     }
 }

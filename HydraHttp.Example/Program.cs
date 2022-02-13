@@ -1,9 +1,9 @@
 ﻿using HydraHttp;
 using System.Text;
 
-var server = await HttpServer.At("localhost", 8080, (req) =>
+using var server = await Server.At("localhost", 8080, (req) =>
 {
-    var s = $"[{req.Client}] {req.Method} {req.Uri}";
+    var s = $"[{req.Remote}] {req.Method} {req.Uri}";
     Console.WriteLine(s);
 
     Stream body = req.Uri switch
@@ -13,8 +13,8 @@ var server = await HttpServer.At("localhost", 8080, (req) =>
     };
 
     var response = new HttpResponse(200, body);
-    response.Headers["Content-Length"] = body.Length.ToString();
     return Task.FromResult(response);
 });
 
+server.Exception += (sender, e) => Console.Error.WriteLine(e.Exception);
 await server.Run();
