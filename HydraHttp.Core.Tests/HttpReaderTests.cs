@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace HydraHttp.Core.Tests
@@ -26,7 +27,7 @@ namespace HydraHttp.Core.Tests
         public async Task ReadStartLine_Complete(string startLine, string expectedMethod, string expectedUri, int expectedVersion)
         {
             stream.Write(startLine.AsBytes());
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
 
             var result = await reader.ReadStartLine();
             Assert.IsTrue(result.Complete(out var value));
@@ -45,7 +46,7 @@ namespace HydraHttp.Core.Tests
         public async Task ReadStartLine_Incomplete(string startLine)
         {
             stream.Write(startLine.AsBytes());
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
 
             var result = await reader.ReadStartLine();
             Assert.IsTrue(result.Incomplete);
@@ -56,7 +57,7 @@ namespace HydraHttp.Core.Tests
         public void ReadStartLine_InvalidMethod(string startLine)
         {
             stream.Write(startLine.AsBytes());
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
 
             Assert.ThrowsExceptionAsync<HttpReader.InvalidTokenException>(() => reader.ReadStartLine());
         }
@@ -66,7 +67,7 @@ namespace HydraHttp.Core.Tests
         public void ReadStartLine_InvalidUri(string startLine)
         {
             stream.Write(startLine.AsBytes());
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
 
             Assert.ThrowsExceptionAsync<HttpReader.InvalidUriException>(() => reader.ReadStartLine());
         }
@@ -76,7 +77,7 @@ namespace HydraHttp.Core.Tests
         public void ReadStartLine_InvalidVersion(string startLine)
         {
             stream.Write(startLine.AsBytes());
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
 
             Assert.ThrowsExceptionAsync<HttpReader.InvalidVersionException>(() => reader.ReadStartLine());
         }
@@ -87,7 +88,7 @@ namespace HydraHttp.Core.Tests
         public void ReadStartLine_UnsupportedVersion(string startLine)
         {
             stream.Write(startLine.AsBytes());
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
 
             Assert.ThrowsExceptionAsync<HttpReader.UnsupportedVersionException>(() => reader.ReadStartLine());
         }
@@ -103,7 +104,7 @@ namespace HydraHttp.Core.Tests
         public async Task ReadHeader_Complete(string header, string expectedName, string expectedValue)
         {
             stream.Write(header.AsBytes());
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
 
             var result = await reader.ReadHeader();
             Assert.IsTrue(result.Complete(out var value));
@@ -118,7 +119,7 @@ namespace HydraHttp.Core.Tests
         public async Task ReadHeader_Finished(string header)
         {
             stream.Write(header.AsBytes());
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
 
             var result = await reader.ReadHeader();
             Assert.IsTrue(result.Finished);
@@ -133,7 +134,7 @@ namespace HydraHttp.Core.Tests
         public async Task ReadHeader_Incomplete(string header)
         {
             stream.Write(header.AsBytes());
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
 
             var result = await reader.ReadHeader();
             Assert.IsTrue(result.Incomplete);
@@ -144,7 +145,7 @@ namespace HydraHttp.Core.Tests
         public void ReadHeader_InvalidName(string header)
         {
             stream.Write(header.AsBytes());
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
 
             Assert.ThrowsExceptionAsync<HttpReader.InvalidHeaderNameException>(() => reader.ReadStartLine());
         }
@@ -193,7 +194,7 @@ namespace HydraHttp.Core.Tests
             var reader = new RequestReader(this.reader);
 
             stream.Write(request.AsBytes());
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
 
             Assert.IsTrue(await reader.Read());
 
@@ -204,7 +205,7 @@ namespace HydraHttp.Core.Tests
             Assert.AreEqual("application/json; charset=utf-8", reader.headers["Content-Type"]);
             Assert.AreEqual($"{body.Length}", reader.headers["Content-Length"]);
 
-            Assert.AreEqual(body, new StreamReader(reader.body!).ReadToEnd());
+            Assert.AreEqual(body, reader.body!.AsText(Encoding.UTF8));
         }
 
         [TestMethod]
@@ -217,7 +218,7 @@ namespace HydraHttp.Core.Tests
             var reader = new RequestReader(this.reader);
 
             stream.Write(request.AsBytes());
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
 
             Assert.IsFalse(await reader.Read());
         }
@@ -230,7 +231,7 @@ namespace HydraHttp.Core.Tests
             var reader = new RequestReader(this.reader);
 
             stream.Write(request.AsBytes());
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
 
             Assert.ThrowsExceptionAsync<HttpReader.InvalidNewlineException>(() => reader.Read());
         }

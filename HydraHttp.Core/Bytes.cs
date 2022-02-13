@@ -4,7 +4,7 @@ using System.Text;
 
 namespace HydraHttp.Core
 {
-    internal struct ByteWalker
+    internal struct Bytes
     {
         private readonly ReadOnlySequence<byte> sequence;
         private SequencePosition position;
@@ -12,7 +12,7 @@ namespace HydraHttp.Core
         private ReadOnlyMemory<byte> memory;
         private int index = 0;
 
-        internal ByteWalker(ReadOnlySequence<byte> sequence)
+        internal Bytes(ReadOnlySequence<byte> sequence)
         {
             this.sequence = sequence;
             nextPosition = sequence.Start;
@@ -59,9 +59,9 @@ namespace HydraHttp.Core
 
     internal static class ByteExtensions
     {
-        internal static ByteWalker ByteWalker(this ReadOnlySequence<byte> sequence) => new(sequence);
+        internal static Bytes ByteWalker(this ReadOnlySequence<byte> sequence) => new(sequence);
 
-        internal static string Ascii(this ReadOnlySequence<byte> sequence)
+        internal static string AsText(this ReadOnlySequence<byte> sequence)
         {
             if (sequence.IsSingleSegment) return Encoding.ASCII.GetString(sequence.FirstSpan);
 

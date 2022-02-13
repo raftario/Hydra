@@ -34,7 +34,7 @@ namespace HydraHttp.Core
 
         private ReadResult result;
         private ReadOnlySequence<byte> buffer;
-        private ByteWalker bytes;
+        private Bytes bytes;
 
         private SequencePosition consumed;
         private SequencePosition examined;
@@ -110,7 +110,7 @@ namespace HydraHttp.Core
             }
         }
 
-        internal static bool ParseStartLine(ref ByteWalker bytes, out string? method, out string? uri, out int version)
+        internal static bool ParseStartLine(ref Bytes bytes, out string? method, out string? uri, out int version)
         {
             method = null;
             uri = null;
@@ -131,7 +131,7 @@ namespace HydraHttp.Core
             return ParseNewLine(ref bytes);
         }
 
-        internal static bool SkipEmptyLines(ref ByteWalker bytes)
+        internal static bool SkipEmptyLines(ref Bytes bytes)
         {
             while (bytes.Peek(out byte b))
             {
@@ -147,13 +147,13 @@ namespace HydraHttp.Core
             return true;
         }
 
-        internal static bool ParseToken(ref ByteWalker bytes, [NotNullWhen(true)] out string? token)
+        internal static bool ParseToken(ref Bytes bytes, [NotNullWhen(true)] out string? token)
         {
             while (bytes.Next(out byte b))
             {
                 if (b == ' ')
                 {
-                    token = bytes.Consumed(-1).Ascii();
+                    token = bytes.Consumed(-1).AsText();
                     return true;
                 }
                 else if (!b.IsAsciiToken()) throw new InvalidTokenException();
@@ -163,13 +163,13 @@ namespace HydraHttp.Core
             return false;
         }
 
-        internal static bool ParseUri(ref ByteWalker bytes, [NotNullWhen(true)] out string? uri)
+        internal static bool ParseUri(ref Bytes bytes, [NotNullWhen(true)] out string? uri)
         {
             while (bytes.Next(out byte b))
             {
                 if (b == ' ')
                 {
-                    uri = bytes.Consumed(-1).Ascii();
+                    uri = bytes.Consumed(-1).AsText();
                     return true;
                 }
                 else if (!b.IsAsciiUri()) throw new InvalidUriException();
@@ -179,7 +179,7 @@ namespace HydraHttp.Core
             return false;
         }
 
-        internal static bool ParseVersion(ref ByteWalker bytes, out int version)
+        internal static bool ParseVersion(ref Bytes bytes, out int version)
         {
             version = default;
             byte b;
@@ -200,7 +200,7 @@ namespace HydraHttp.Core
             return true;
         }
 
-        internal static bool ParseNewLine(ref ByteWalker bytes)
+        internal static bool ParseNewLine(ref Bytes bytes)
         {
             if (!bytes.Next(out byte b)) return false;
             if (b == '\r')
@@ -213,7 +213,7 @@ namespace HydraHttp.Core
             return true;
         }
 
-        internal static Status ParseHeader(ref ByteWalker bytes, out string? name, out string? value)
+        internal static Status ParseHeader(ref Bytes bytes, out string? name, out string? value)
         {
             name = null;
             value = null;
@@ -231,7 +231,7 @@ namespace HydraHttp.Core
                 else if (b == '\n') return Status.Finished;
                 else if (b == ':')
                 {
-                    name = bytes.Consumed(-1).Ascii();
+                    name = bytes.Consumed(-1).AsText();
                     break;
                 }
                 else if (!b.IsAsciiHeaderName()) throw new InvalidHeaderNameException();
@@ -266,7 +266,7 @@ namespace HydraHttp.Core
             }
             if (valueBytes is null) return Status.Incomplete;
 
-            value = valueBytes.Value.Slice(valueStart).Ascii();
+            value = valueBytes.Value.Slice(valueStart).AsText();
             return Status.Complete;
         }
 
