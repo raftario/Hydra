@@ -73,7 +73,7 @@ namespace HydraHttp.Core
             writer.Advance(2);
 
             await writer.FlushAsync(cancellationToken);
-            await body.CopyToAsync(writer.AsStream(), cancellationToken);
+            await body.CopyToAsync(writer, cancellationToken);
         }
     }
 }
