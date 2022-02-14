@@ -51,13 +51,11 @@ namespace HydraHttp
                 }
             }
 
-            var length = Math.Min(currentChunkLength - i, buffer.Length);
+            var result = await reader.Reader.ReadAsync(cancellationToken);
+            var length = (int) Math.Min(Math.Min(currentChunkLength - i, buffer.Length), result.Buffer.Length);
 
-            var result = await reader.Reader.ReadAtLeastAsync(length, cancellationToken);
-            var chunkedBuf = result.Buffer.Slice(0, length);
-
-            chunkedBuf.CopyTo(buffer.Span[..length]);
-            reader.Reader.AdvanceTo(chunkedBuf.GetPosition(length));
+            result.Buffer.Slice(0, length).CopyTo(buffer.Span[..length]);
+            reader.Reader.AdvanceTo(result.Buffer.GetPosition(length));
 
             i += length;
             return length;
