@@ -1,20 +1,24 @@
 ﻿using HydraHttp;
-using System.Text;
+using HydraHttp.Example;
 
-using var server = await Server.At("localhost", 8080, (req) =>
+var handlerName = args.Length >= 1 ? args[0] : null;
+Server.HttpHandler handler = handlerName?.ToLower() switch
 {
-    var s = $"[{req.Remote}] {req.Method} {req.Uri}";
-    Console.WriteLine(s);
+    "echo" => Handlers.Echo,
+    "headers" => Handlers.Headers,
+    "file" => Handlers.File,
+    _ => Handlers.Hello,
+};
 
-    Stream body = req.Uri switch
-    {
-        "/echo" or "/echo/" => req.Body,
-        _ => new MemoryStream(Encoding.UTF8.GetBytes(s))
-    };
+var hostname = args.Length >= 2 ? args[1] : "localhost";
+var port = args.Length >= 3 ? int.Parse(args[2]) : 8080;
 
-    var response = new HttpResponse(200, body);
-    return Task.FromResult(response);
+Console.WriteLine($"Starting server at `http://{hostname}:{port}`");
+
+using var server = await Server.At(hostname, port, async (req) =>
+{
+    var res = await handler(req);
+    Console.WriteLine($"[{req.Remote}]: {req.Method} {req.Uri} => {res.Status}");
+    return res;
 });
-
-server.Exception += (sender, e) => Console.Error.WriteLine(e.Exception);
 await server.Run();

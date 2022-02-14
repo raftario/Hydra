@@ -69,8 +69,5 @@ namespace HydraHttp
             n += read;
             return read;
         }
-
-        protected override void Dispose(bool disposing) => stream.Dispose();
-        public override ValueTask DisposeAsync() => stream.DisposeAsync();
     }
 }

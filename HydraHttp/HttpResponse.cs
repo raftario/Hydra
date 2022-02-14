@@ -92,7 +92,11 @@ namespace HydraHttp
             // if we don't have a content length the client can't know the length and need to close the connection once the body is sent
             needsClose = needsClose || (!noBody && !response.Headers.ContainsKey("Content-Length"));
 
-            if (noBody) response.Body = HttpEmptyBodyStream.Body;
+            if (noBody)
+            {
+                if (response.Body is not null) await response.Body.DisposeAsync();
+                response.Body = HttpEmptyBodyStream.Body;
+            }
             if (needsClose) response.Headers["Connection"] = "close";
             // Transfer-Encoding and Content-Length are illegal on responses without a body that don't indicate the headers of other responses
             if (noBody && request.Method != "HEAD" && response.Status != 304)

@@ -194,10 +194,17 @@ namespace HydraHttp
                         continue;
                     }
 
-                    // returns true if we need to close
-                    if (await httpWriter.WriteResponse(response, request, cancellationToken)) return;
-                    // need to make sure the whole body has been read before parsing the next request
-                    await Drain(request.Body, cancellationToken);
+                    try
+                    {
+                        // returns true if we need to close
+                        if (await httpWriter.WriteResponse(response, request, cancellationToken)) return;
+                        // need to make sure the whole body has been read before parsing the next request
+                        await Drain(request.Body, cancellationToken);
+                    }
+                    finally
+                    {
+                        if (response.Body is not null) await response.Body.DisposeAsync();
+                    }
                 }
             }
             catch (OperationCanceledException) { }
