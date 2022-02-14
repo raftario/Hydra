@@ -11,8 +11,8 @@ namespace HydraHttp.OneDotOne.Tests
     [TestClass]
     public class HttpReaderTests
     {
-        private MemoryStream stream;
-        private HttpReader reader;
+        private readonly MemoryStream stream;
+        private readonly HttpReader reader;
 
         public HttpReaderTests()
         {
@@ -154,7 +154,7 @@ namespace HydraHttp.OneDotOne.Tests
 
         private class RequestReader
         {
-            private HttpReader reader;
+            private readonly HttpReader reader;
 
             internal StartLine? startLine = null;
             internal readonly Dictionary<string, string> headers = new();
@@ -186,8 +186,8 @@ namespace HydraHttp.OneDotOne.Tests
         [TestMethod]
         public async Task Read_Complete()
         {
-            var body = "{ \"name\": \"Hydra\" }";
-            var request =
+            string body = "{ \"name\": \"Hydra\" }";
+            string request =
                 "POST /api/songs/1?locale=en HTTP/1.1\r\n" +
                 "Content-Type: application/json; charset=utf-8\r\n" +
                 $"Content-Length: {body.Length}\r\n" +

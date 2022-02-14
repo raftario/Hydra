@@ -90,7 +90,7 @@ namespace HydraHttp.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public bool Next(out byte next)
         {
-            var peeked = Peek(out next);
+            bool peeked = Peek(out next);
             if (peeked) Bump();
             return peeked;
         }

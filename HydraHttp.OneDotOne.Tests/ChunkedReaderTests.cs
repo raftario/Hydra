@@ -9,8 +9,8 @@ namespace HydraHttp.OneDotOne.Tests
     [TestClass]
     public class ChunkedReaderTests
     {
-        private MemoryStream stream;
-        private ChunkedReader reader;
+        private readonly MemoryStream stream;
+        private readonly ChunkedReader reader;
 
         public ChunkedReaderTests()
         {
@@ -33,7 +33,7 @@ namespace HydraHttp.OneDotOne.Tests
             stream.Position = 0;
 
             var result = await reader.ReadChunkSize(prefixNewline);
-            Assert.IsTrue(result.Complete(out var value));
+            Assert.IsTrue(result.Complete(out int? value));
 
             Assert.AreEqual(expectedSize, value!.Value);
             Assert.AreEqual(expectedBody, reader.Reader.AsStream().AsText());

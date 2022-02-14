@@ -1,7 +1,7 @@
 ﻿using HydraHttp;
 using HydraHttp.Example;
 
-var handlerName = args.Length >= 1 ? args[0] : null;
+string? handlerName = args.Length >= 1 ? args[0] : null;
 Server.HttpHandler handler = handlerName?.ToLower() switch
 {
     "echo" => Handlers.Echo,
@@ -11,7 +11,7 @@ Server.HttpHandler handler = handlerName?.ToLower() switch
     _ => Handlers.Hello,
 };
 
-var hostname = args.Length >= 2 ? args[1] : "localhost";
+string hostname = args.Length >= 2 ? args[1] : "localhost";
 var port = args.Length >= 3 ? int.Parse(args[2]) : 8080;
 
 Console.WriteLine($"Starting server at `http://{hostname}:{port}`");

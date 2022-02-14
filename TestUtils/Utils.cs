@@ -9,7 +9,7 @@ namespace TestUtils
         public static byte[] AsBytes(this string s, Encoding? encoding = null) =>
             (encoding ?? Encoding.ASCII).GetBytes(s);
         public static ReadOnlySequence<byte> AsReadonlySequence(this string s, Encoding? encoding = null) =>
-            new ReadOnlySequence<byte>(s.AsBytes(encoding));
+            new(s.AsBytes(encoding));
         public static Stream AsStream(this string s, Encoding? encoding = null) =>
             new MemoryStream(s.AsBytes(encoding));
         public static string AsText(this Stream stream, Encoding? encoding = null) =>

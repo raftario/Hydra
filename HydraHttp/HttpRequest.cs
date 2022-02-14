@@ -161,16 +161,16 @@ namespace HydraHttp
             // push content encodings to our stack first if any
             if (headers.TryGetValue("Content-Encoding", out var ce))
             {
-                foreach (var value in ce) encoding.Push(value);
+                foreach (string value in ce) encoding.Push(value);
             }
             
             if (headers.TryGetValue("Transfer-Encoding", out var te))
             {
                 // push transfer encodings to our stack
-                foreach (var value in te) encoding.Push(value);
+                foreach (string value in te) encoding.Push(value);
 
                 // if we have transfer encodings the outermost one must be chunk or the body isn't readable
-                if (encoding.TryPeek(out var e) && e.Equals("chunked", StringComparison.OrdinalIgnoreCase))
+                if (encoding.TryPeek(out string? e) && e.Equals("chunked", StringComparison.OrdinalIgnoreCase))
                 {
                     body = new HttpChunkedBodyStream(reader.Reader);
                     encoding.Pop();
@@ -180,10 +180,10 @@ namespace HydraHttp
             else if (headers.TryGetValue("Content-Length", out var cl))
             {
                 // there is one content length value but it's not readable as an integer
-                if (cl.Count == 1 && !int.TryParse(cl, out var length)) throw new HttpRequest.InvalidContentLengthException();
+                if (cl.Count == 1 && !int.TryParse(cl, out int length)) throw new HttpRequest.InvalidContentLengthException();
 
                 // if there are many content length values they must all be identical and readable as integers
-                var distinct = cl.Distinct().ToArray();
+                string[] distinct = cl.Distinct().ToArray();
                 if (distinct.Length != 1 || !int.TryParse(distinct[0], out length)) throw new HttpRequest.InvalidContentLengthException();
 
                 body = new HttpSizedBodyStream(reader.Body, length);
@@ -215,8 +215,8 @@ namespace HydraHttp
                 var headerResult = await reader.ReadHeader(cancellationToken);
                 if (headerResult.Complete(out var header))
                 {
-                    var name = header.Value.Name;
-                    var values = header.Value.Value.Split(',').Select((s) => s.Trim()).ToArray();
+                    string name = header.Value.Name;
+                    string[] values = header.Value.Value.Split(',').Select((s) => s.Trim()).ToArray();
                     if (headers.TryGetValue(name, out var otherValues)) headers[name] = StringValues.Concat(otherValues, values);
                     else headers.Add(name, values);
                 }

@@ -51,7 +51,7 @@ namespace HydraHttp
                 // i can only be 0 if this is a fresh stream,
                 // which is the only case where we don't want to parse the prefix newline
                 var nextChunk = await reader.ReadChunkSize(i > 0, cancellationToken);
-                if (!nextChunk.Complete(out var nextChunkLength)) return 0;
+                if (!nextChunk.Complete(out int? nextChunkLength)) return 0;
                 currentChunkLength = nextChunkLength.Value;
                 i = 0;
 
@@ -66,7 +66,7 @@ namespace HydraHttp
             // read a less or equal amount of bytes than what's left in the current chunk
 
             var result = await reader.Reader.ReadAsync(cancellationToken);
-            var length = (int) Math.Min(Math.Min(currentChunkLength - i, buffer.Length), result.Buffer.Length);
+            int length = (int) Math.Min(Math.Min(currentChunkLength - i, buffer.Length), result.Buffer.Length);
 
             result.Buffer.Slice(0, length).CopyTo(buffer.Span[..length]);
             reader.Reader.AdvanceTo(result.Buffer.GetPosition(length));

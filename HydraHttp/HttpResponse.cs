@@ -74,7 +74,7 @@ namespace HydraHttp
                 throw new HttpResponse.InvalidResponseException("Transfer-Encoding and Content-Length headers set in the same response", response);
 
             // if this is a head response we there can't be a body
-            var noBody = request.Method == "HEAD";
+            bool noBody = request.Method == "HEAD";
             // if this is a successful connect response there can't be a body
             noBody = noBody || (request.Method == "CONNECT" && response.Status >= 200 && response.Status < 300);
             // if this is an 1xx informational response there can't be a body
@@ -83,7 +83,7 @@ namespace HydraHttp
             noBody = noBody || response.Status == 204 || response.Status == 304;
 
             // if the client is HTTP/1.0 or indicates it wants the connection to close we need to close the connection once the body is set
-            var needsClose = request.Version == HttpVersion.Http10
+            bool needsClose = request.Version == HttpVersion.Http10
                 || (request.Headers.TryGetValue("Connection", out var conn) && conn.ToString().Equals("close", StringComparison.OrdinalIgnoreCase));
             // if the response has transfer encodings and the last one isn't chunked the client can't know the length and need to close the connection once the body is sent
             needsClose = needsClose || (!noBody

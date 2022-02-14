@@ -44,7 +44,7 @@ namespace HydraHttp.OneDotOne
 
                 try
                 {
-                    var status = ParseHeader(ref bytes, out var name, out var value);
+                    var status = ParseHeader(ref bytes, out string? name, out string? value);
                     if (status != Status.Incomplete)
                     {
                         consumed = bytes.Position;
@@ -120,7 +120,7 @@ namespace HydraHttp.OneDotOne
 
             while (bytes.Peek(out b))
             {
-                if (b == ' ' || b == '\t') bytes.Bump();
+                if (b is (byte)' ' or (byte)'\t') bytes.Bump();
                 else break;
             }
             bytes.Consume();
@@ -141,13 +141,11 @@ namespace HydraHttp.OneDotOne
                     value = bytes.Read(valueEndOffset - 1).AsAscii();
                     break;
                 }
-                else if (b == ' ' || b == '\t') valueEndOffset--;
+                else if (b is (byte)' ' or (byte)'\t') valueEndOffset--;
                 else if (!b.IsAsciiHeaderValue()) throw new InvalidHeaderValueException();
                 else valueEndOffset = 0;
             }
-            if (value is null) return Status.Incomplete;
-
-            return Status.Complete;
+            return value is null ? Status.Incomplete : Status.Complete;
         }
 
         /// <summary>

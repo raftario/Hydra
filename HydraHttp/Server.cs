@@ -27,11 +27,11 @@ namespace HydraHttp
         /// <summary>
         /// Listener used to accept clients
         /// </summary>
-        private Socket listener;
+        private readonly Socket listener;
         /// <summary>
         /// Handler used for HTTP requests
         /// </summary>
-        private HttpHandler httpHandler;
+        private readonly HttpHandler httpHandler;
         /// <summary>
         /// Optional certificated used to encrypt connections with TLS
         /// </summary>
@@ -112,14 +112,14 @@ namespace HydraHttp
         /// <param name="key">Path to the private key file, if required</param>
         public async Task Tls(string cert, string? key = null)
         {
-            var certContents = await File.ReadAllTextAsync(cert);
+            string certContents = await File.ReadAllTextAsync(cert);
             if (key is null)
             {
                 this.cert = X509Certificate2.CreateFromPem(certContents);
             }
             else
             {
-                var keyContents = await File.ReadAllTextAsync(key);
+                string keyContents = await File.ReadAllTextAsync(key);
                 this.cert = X509Certificate2.CreateFromPem(certContents, keyContents);
             }
         }
@@ -221,7 +221,7 @@ namespace HydraHttp
         private static async ValueTask Drain(Stream stream, CancellationToken cancellationToken)
         {
             var pool = ArrayPool<byte>.Shared;
-            var buffer = pool.Rent(4096);
+            byte[] buffer = pool.Rent(4096);
             int read = 1;
 
             try

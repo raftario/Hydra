@@ -7,8 +7,8 @@ namespace HydraHttp.Tests
     [TestClass]
     public class HttpChunkedBodyStreamTests
     {
-        private MemoryStream stream;
-        private HttpChunkedBodyStream bodyStream;
+        private readonly MemoryStream stream;
+        private readonly HttpChunkedBodyStream bodyStream;
 
         public HttpChunkedBodyStreamTests()
         {
@@ -19,7 +19,7 @@ namespace HydraHttp.Tests
         [TestMethod]
         public void Decodes()
         {
-            var encoded =
+            string encoded =
                 "3\r\n" + "oh \r\n" +
                 "3\r\n" + "hi \r\n" +
                 "4\r\n" + "mark\r\n" +
@@ -34,7 +34,7 @@ namespace HydraHttp.Tests
         [TestMethod]
         public void DecodesHeaders()
         {
-            var encoded =
+            string encoded =
                 "3\r\n" + "oh \r\n" +
                 "3\r\n" + "hi \r\n" +
                 "4\r\n" + "mark\r\n" +

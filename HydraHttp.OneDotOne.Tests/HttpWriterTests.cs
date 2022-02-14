@@ -10,8 +10,8 @@ namespace HydraHttp.OneDotOne.Tests
     [TestClass]
     public class HttpWriterTests
     {
-        private MemoryStream stream;
-        private HttpWriter writer;
+        private readonly MemoryStream stream;
+        private readonly HttpWriter writer;
 
         public HttpWriterTests()
         {
@@ -22,13 +22,13 @@ namespace HydraHttp.OneDotOne.Tests
         [TestMethod]
         public async Task Write()
         {
-            var body = "{ \"name\": \"Hydra\" }";
+            string body = "{ \"name\": \"Hydra\" }";
             writer.WriteStatusLine(new(200, "OK"));
             writer.WriteHeader(new("Content-Type", "application/json; charset=utf-8"));
             writer.WriteHeader(new("Content-Length", body.Length.ToString()));
             await writer.Send(body.AsStream());
 
-            var expected =
+            string expected =
                 "HTTP/1.1 200 OK\r\n" +
                 "Content-Type: application/json; charset=utf-8\r\n" +
                 $"Content-Length: {body.Length}\r\n" +

@@ -41,7 +41,7 @@ namespace HydraHttp.OneDotOne
 
                 try
                 {
-                    if (ParseStartLine(ref bytes, out var method, out var uri, out var version))
+                    if (ParseStartLine(ref bytes, out string? method, out string? uri, out int version))
                     {
                         consumed = bytes.Position;
                         examined = consumed;

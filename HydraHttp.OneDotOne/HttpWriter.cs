@@ -24,7 +24,7 @@ namespace HydraHttp.OneDotOne
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void WriteStatusLine(StatusLine statusLine)
         {
-            var statusString = statusLine.Status.ToString();
+            string statusString = statusLine.Status.ToString();
 
             int versionIdx = 0;
             int firstSpaceIdx = versionIdx + version.Length;

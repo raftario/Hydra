@@ -44,7 +44,7 @@ namespace HydraHttp
         }
         public override int Read(Span<byte> buffer)
         {
-            var length = Count(buffer.Length);
+            int length = Count(buffer.Length);
             if (length == 0) return 0;
 
             int read = stream.Read(buffer[..length]);
@@ -62,7 +62,7 @@ namespace HydraHttp
         }
         public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
         {
-            var length = Count(buffer.Length);
+            int length = Count(buffer.Length);
             if (length == 0) return 0;
 
             int read = await stream.ReadAsync(buffer[..length], cancellationToken);

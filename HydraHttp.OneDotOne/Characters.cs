@@ -73,8 +73,10 @@ namespace HydraHttp.OneDotOne
         internal static bool IsAsciiHeaderValue(this byte c) => headerValueMap[c];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        internal static bool IsAsciiToken(this byte c) => c > 0x1F && c < 0x7F;
+        internal static bool IsAsciiToken(this byte c) => c is > 0x1F and < 0x7F;
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        internal static bool IsAsciiHexDigit(this byte c) => (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
+        internal static bool IsAsciiHexDigit(this byte c) => c is (>= (byte)'0' and <= (byte)'9')
+            or (>= (byte)'A' and <= (byte)'F')
+            or (>= (byte)'a' and <= (byte)'f');
     }
 }

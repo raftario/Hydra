@@ -40,7 +40,7 @@ namespace HydraHttp.OneDotOne
 
                 try
                 {
-                    if (ParseChunkSize(ref bytes, prefixNewline, out var length))
+                    if (ParseChunkSize(ref bytes, prefixNewline, out int length))
                     {
                         consumed = bytes.Position;
                         examined = consumed;
@@ -74,7 +74,7 @@ namespace HydraHttp.OneDotOne
 
             while (bytes.Peek(out byte b))
             {
-                if (b == '\r' || b == '\n')
+                if (b is (byte)'\r' or (byte)'\n')
                 {
                     if (hex is null) hex = bytes.Read().AsAscii();
                     break;
