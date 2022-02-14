@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace HydraHttp
 {
     /// <summary>
-    /// A mid-level HTTP/1.1 and WebSocket server suitable for building abstractions or using directly
+    /// An HTTP/1.1 and WebSocket server
     /// </summary>
     public class Server : IDisposable
     {
@@ -96,7 +96,11 @@ namespace HydraHttp
                 catch (SocketException ex)
                 {
                     last = ex;
-                    if (listener is not null) listener.Dispose();
+                    if (listener is not null)
+                    {
+                        listener.Dispose();
+                        listener = null;
+                    }
                 }
             }
 

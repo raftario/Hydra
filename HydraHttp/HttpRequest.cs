@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -139,6 +140,7 @@ namespace HydraHttp
         /// </summary>
         /// <param name="socket">Underlying socket the request originated from</param>
         /// <returns>An instance of <see cref="HttpRequest"/> or null if the connection is closed before receiving a full request</returns>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public static async ValueTask<HttpRequest?> ReadRequest(this HttpReader reader, Socket socket, CancellationToken cancellationToken = default)
         {
             // read the start line
@@ -179,12 +181,19 @@ namespace HydraHttp
             }
             else if (headers.TryGetValue("Content-Length", out var cl))
             {
-                // there is one content length value but it's not readable as an integer
-                if (cl.Count == 1 && !int.TryParse(cl, out int length)) throw new HttpRequest.InvalidContentLengthException();
+                int length;
 
-                // if there are many content length values they must all be identical and readable as integers
-                string[] distinct = cl.Distinct().ToArray();
-                if (distinct.Length != 1 || !int.TryParse(distinct[0], out length)) throw new HttpRequest.InvalidContentLengthException();
+                // there is one content length value but it's not readable as an integer
+                if (cl.Count == 1)
+                {
+                    if (!int.TryParse(cl, out length)) throw new HttpRequest.InvalidContentLengthException();
+                }
+                else
+                {
+                    // if there are many content length values they must all be identical and readable as integers
+                    string[] distinct = cl.Distinct().ToArray();
+                    if (distinct.Length != 1 || !int.TryParse(distinct[0], out length)) throw new HttpRequest.InvalidContentLengthException();
+                }
 
                 body = new HttpSizedBodyStream(reader.Body, length);
             }
@@ -208,6 +217,7 @@ namespace HydraHttp
         /// </summary>
         /// <param name="headers">Instance to write the read headers to</param>
         /// <returns>true on success or false if the connection is closed before receiving the full headers</returns>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public static async ValueTask<bool> ReadHeaders(this AbstractReader reader, HttpHeaders headers, CancellationToken cancellationToken = default)
         {
             while (true)
@@ -217,8 +227,7 @@ namespace HydraHttp
                 {
                     string name = header.Value.Name;
                     string[] values = header.Value.Value.Split(',').Select((s) => s.Trim()).ToArray();
-                    if (headers.TryGetValue(name, out var otherValues)) headers[name] = StringValues.Concat(otherValues, values);
-                    else headers.Add(name, values);
+                    headers.Add(name, values);
                 }
                 else if (headerResult.Incomplete) return false;
                 else if (headerResult.Finished) return true;

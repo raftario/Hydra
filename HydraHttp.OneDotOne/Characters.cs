@@ -6,7 +6,7 @@ namespace HydraHttp.OneDotOne
     // https://github.com/seanmonstar/httparse
     internal static class Characters
     {
-        private static ReadOnlySpan<bool> uriMap => new[]
+        private static ReadOnlySpan<bool> UriMap => new[]
         {
             false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
             false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
@@ -26,9 +26,9 @@ namespace HydraHttp.OneDotOne
             false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
         };
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        internal static bool IsAsciiUri(this byte c) => uriMap[c];
+        internal static bool IsAsciiUri(this byte c) => UriMap[c];
 
-        private static ReadOnlySpan<bool> headerNameMap => new[]
+        private static ReadOnlySpan<bool> HeaderNameMap => new[]
         {
             false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
             false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
@@ -48,9 +48,9 @@ namespace HydraHttp.OneDotOne
             false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
         };
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        internal static bool IsAsciiHeaderName(this byte c) => headerNameMap[c];
+        internal static bool IsAsciiHeaderName(this byte c) => HeaderNameMap[c];
 
-        private static ReadOnlySpan<bool> headerValueMap => new[]
+        private static ReadOnlySpan<bool> HeaderValueMap => new[]
         {
             false, false, false, false, false, false, false, false, false, true,  false, false, false, false, false, false,
             false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
@@ -70,7 +70,7 @@ namespace HydraHttp.OneDotOne
             true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true, 
         };
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        internal static bool IsAsciiHeaderValue(this byte c) => headerValueMap[c];
+        internal static bool IsAsciiHeaderValue(this byte c) => HeaderValueMap[c];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         internal static bool IsAsciiToken(this byte c) => c is > 0x1F and < 0x7F;

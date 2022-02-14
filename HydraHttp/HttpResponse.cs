@@ -1,6 +1,7 @@
 ﻿using HydraHttp.OneDotOne;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -43,12 +44,23 @@ namespace HydraHttp
             Body = body;
         }
 
-        public class InvalidResponseException : Exception
+        /// <summary>
+        /// An exception thrown by the server when the response provided to it is invalid
+        /// </summary>
+        public class InvalidException : Exception
         {
+            /// <summary>
+            /// Request that caused the invalid response
+            /// </summary>
+            public HttpRequest Request { get; }
+            /// <summary>
+            /// Invalid response
+            /// </summary>
             public HttpResponse Response { get; }
 
-            public InvalidResponseException(string message, HttpResponse response) : base(message)
+            public InvalidException(string message, HttpRequest request, HttpResponse response) : base(message)
             {
+                Request = request;
                 Response = response;
             }
         }
@@ -64,14 +76,15 @@ namespace HydraHttp
         /// <param name="request"></param>
         /// <param name="cancellationToken"></param>
         /// <returns>true if the underlying connection needs to be closed after sending the response</returns>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public static async ValueTask<bool> WriteResponse(this HttpWriter writer, HttpResponse response, HttpRequest request, CancellationToken cancellationToken = default)
         {
             // transfer encodings are not supported by HTTP/1.0
             if (request.Version == HttpVersion.Http10 && response.Headers.ContainsKey("Transfer-Encoding"))
-                throw new HttpResponse.InvalidResponseException("Transfer-Encoding header sent to an HTTP/1.0 client", response);
+                throw new HttpResponse.InvalidException("`Transfer-Encoding` header sent to an HTTP/1.0 client", request, response);
             // responses with both Transfer-Encoding and Content-Length headers are illegal
             if (response.Headers.ContainsKey("Transfer-Encoding") && response.Headers.ContainsKey("Content-Length"))
-                throw new HttpResponse.InvalidResponseException("Transfer-Encoding and Content-Length headers set in the same response", response);
+                throw new HttpResponse.InvalidException("`Transfer-Encoding` and `Content-Length` headers set in the same response", request, response);
 
             // if this is a head response we there can't be a body
             bool noBody = request.Method == "HEAD";
@@ -94,15 +107,24 @@ namespace HydraHttp
 
             if (noBody)
             {
+                // Transfer-Encoding and Content-Length are illegal on responses without a body that aren't from a HEAD request or a 304
+                if (request.Method != "HEAD" && response.Status != 304)
+                {
+                    if (response.Headers.ContainsKey("Transfer-Encoding"))
+                        throw new HttpResponse.InvalidException("`Transfer-Encoding` header present in a response without a body", request, response);
+                    if (response.Headers.ContainsKey("Content-Length"))
+                        throw new HttpResponse.InvalidException("`Content-Length` header present in a response without a body", request, response);
+                }
+
                 if (response.Body is not null) await response.Body.DisposeAsync();
                 response.Body = HttpEmptyBodyStream.Body;
             }
-            if (needsClose) response.Headers["Connection"] = "close";
-            // Transfer-Encoding and Content-Length are illegal on responses without a body that don't indicate the headers of other responses
-            if (noBody && request.Method != "HEAD" && response.Status != 304)
+            if (needsClose)
             {
-                response.Headers.Remove("Transfer-Encoding");
-                response.Headers.Remove("Content-Length");
+                if (response.Headers.TryGetValue("Connection", out conn) && !conn.ToString().Trim().Equals("close", StringComparison.OrdinalIgnoreCase))
+                        throw new HttpResponse.InvalidException("`Connection` header other than `close` present in a connection that must be closed", request, response);
+                
+                response.Headers["Connection"] = "close";
             }
 
             writer.WriteStatusLine(new(response.Status, response.Reason));

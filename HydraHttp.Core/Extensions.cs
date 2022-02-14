@@ -9,7 +9,7 @@ namespace HydraHttp.Core
         /// <summary>
         /// Returns an instance of <see cref="Bytes"/> for this sequence
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Bytes Bytes(this ReadOnlySequence<byte> sequence) => new(sequence);
 
         /// <summary>

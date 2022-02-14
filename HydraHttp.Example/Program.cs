@@ -4,11 +4,11 @@ using HydraHttp.Example;
 string? handlerName = args.Length >= 1 ? args[0] : null;
 Server.HttpHandler handler = handlerName?.ToLower() switch
 {
-    "echo" => Handlers.Echo,
+    "hello" => Handlers.Hello,
     "headers" => Handlers.Headers,
     "file" => Handlers.File,
     "cats" => Handlers.Cats,
-    _ => Handlers.Hello,
+    _ => Handlers.Echo,
 };
 
 string hostname = args.Length >= 2 ? args[1] : "localhost";

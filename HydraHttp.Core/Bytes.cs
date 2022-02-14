@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Buffers;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace HydraHttp.Core
 {
@@ -30,7 +29,6 @@ namespace HydraHttp.Core
         /// Returns a new instance
         /// </summary>
         /// <param name="sequence">Sequence to wrap</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public Bytes(ReadOnlySequence<byte> sequence)
         {
             this.sequence = sequence;
@@ -79,7 +77,7 @@ namespace HydraHttp.Core
         /// <summary>
         /// Advances the read cursor
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Bump() => index++;
 
         /// <summary>

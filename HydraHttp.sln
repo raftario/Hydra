@@ -7,22 +7,23 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HydraHttp.Core", "HydraHttp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3B590FAA-5185-45C6-8EAC-86AF81400472}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
 		.gitignore = .gitignore
 		.github\workflows\main.yml = .github\workflows\main.yml
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydraHttp", "HydraHttp\HydraHttp.csproj", "{38CA373D-43C1-4DDD-9902-46CCB7E6EEBF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HydraHttp", "HydraHttp\HydraHttp.csproj", "{38CA373D-43C1-4DDD-9902-46CCB7E6EEBF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydraHttp.Example", "HydraHttp.Example\HydraHttp.Example.csproj", "{EA937375-62B5-482D-8E55-F48A630FA531}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HydraHttp.Example", "HydraHttp.Example\HydraHttp.Example.csproj", "{EA937375-62B5-482D-8E55-F48A630FA531}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydraHttp.OneDotOne", "HydraHttp.OneDotOne\HydraHttp.OneDotOne.csproj", "{04CB3A19-718C-48F3-9B3B-B7A14959822D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HydraHttp.OneDotOne", "HydraHttp.OneDotOne\HydraHttp.OneDotOne.csproj", "{04CB3A19-718C-48F3-9B3B-B7A14959822D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydraHttp.OneDotOne.Tests", "HydraHttp.OneDotOne.Tests\HydraHttp.OneDotOne.Tests.csproj", "{9DCB0F74-29B0-462D-BB75-4C417A29DED4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HydraHttp.OneDotOne.Tests", "HydraHttp.OneDotOne.Tests\HydraHttp.OneDotOne.Tests.csproj", "{9DCB0F74-29B0-462D-BB75-4C417A29DED4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydraHttp.Tests", "HydraHttp.Tests\HydraHttp.Tests.csproj", "{B606497E-0233-44DB-908A-DF19C20C953A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HydraHttp.Tests", "HydraHttp.Tests\HydraHttp.Tests.csproj", "{B606497E-0233-44DB-908A-DF19C20C953A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestUtils", "TestUtils\TestUtils.csproj", "{54E743B5-F4CF-4FEC-962B-EB45396ED082}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestUtils", "TestUtils\TestUtils.csproj", "{54E743B5-F4CF-4FEC-962B-EB45396ED082}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
