@@ -1,8 +1,11 @@
 ﻿using HydraHttp.OneDotOne;
 using System;
+using System.IO;
 using System.IO.Pipelines;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,6 +17,7 @@ namespace HydraHttp
 
         private Socket listener;
         private Handler handler;
+        private X509Certificate2? cert;
 
         public Server(Socket listener, Handler handler)
         {
@@ -57,6 +61,20 @@ namespace HydraHttp
                 : throw last!;
         }
 
+        public async Task Tls(string cert, string? key = null)
+        {
+            var certContents = await File.ReadAllTextAsync(cert);
+            if (key is null)
+            {
+                this.cert = X509Certificate2.CreateFromPem(certContents);
+            }
+            else
+            {
+                var keyContents = await File.ReadAllTextAsync(key);
+                this.cert = X509Certificate2.CreateFromPem(certContents, keyContents);
+            }
+        }
+
         public async Task Run(CancellationToken cancellationToken = default)
         {
             while (true)
@@ -68,7 +86,13 @@ namespace HydraHttp
 
         private async Task Client(Socket client, CancellationToken cancellationToken)
         {
-            var stream = new NetworkStream(client, true);
+            Stream stream = new NetworkStream(client, true);
+            if (cert is not null)
+            {
+                var tlsStream = new SslStream(stream, false);
+                await tlsStream.AuthenticateAsServerAsync(new SslServerAuthenticationOptions { ServerCertificate = cert }, cancellationToken);
+                stream = tlsStream;
+            }
 
             var reader = PipeReader.Create(stream);
             var writer = PipeWriter.Create(stream);
