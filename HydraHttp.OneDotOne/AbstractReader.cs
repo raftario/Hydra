@@ -151,7 +151,7 @@ namespace HydraHttp.OneDotOne
         /// Consumes a single newline
         /// </summary>
         /// <returns>false if the data is incomplete</returns>
-        internal static bool Consume(ref Bytes bytes)
+        internal static bool ConsumeNewline(ref Bytes bytes)
         {
             if (!bytes.Next(out byte b)) return false;
             if (b == '\r')

@@ -76,7 +76,7 @@ namespace HydraHttp.OneDotOne
             if (!ParseUri(ref bytes, out uri)) return false;
             if (!ParseVersion(ref bytes, out version)) return false;
 
-            return Consume(ref bytes);
+            return ConsumeNewline(ref bytes);
         }
 
         /// <summary>

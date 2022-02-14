@@ -68,7 +68,7 @@ namespace HydraHttp.OneDotOne
             length = default;
             string? hex = null;
 
-            if (prefixNewline && !Consume(ref bytes)) return false;
+            if (prefixNewline && !ConsumeNewline(ref bytes)) return false;
 
             while (bytes.Peek(out byte b))
             {
@@ -89,7 +89,7 @@ namespace HydraHttp.OneDotOne
             if (hex is null) return false;
 
             length = int.Parse(hex, NumberStyles.HexNumber);
-            return Consume(ref bytes);
+            return ConsumeNewline(ref bytes);
         }
     }
 }
