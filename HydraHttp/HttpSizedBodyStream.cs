@@ -7,6 +7,8 @@ namespace HydraHttp
 {
     /// <summary>
     /// A wrapper around a stream that limits the amount of data that can be read from it
+    /// 
+    /// This class is not responsible for disposing of the wrapped stream
     /// </summary>
     public class HttpSizedBodyStream : HttpBodyStream
     {

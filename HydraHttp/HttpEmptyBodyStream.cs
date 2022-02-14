@@ -26,8 +26,5 @@ namespace HydraHttp
         public override int Read(Span<byte> buffer) => 0;
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default) => Task.FromResult(0);
         public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) => ValueTask.FromResult(0);
-
-        protected override void Dispose(bool disposing) { }
-        public override ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }

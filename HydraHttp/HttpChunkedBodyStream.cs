@@ -10,6 +10,8 @@ namespace HydraHttp
 {
     /// <summary>
     /// A wrapper around another stream which decodes its chunked contents and makes them readable in their original encoding
+    /// 
+    /// This class is not responsible for disposing of the wrapped stream
     /// </summary>
     public class HttpChunkedBodyStream : HttpBodyStream
     {
