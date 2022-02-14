@@ -22,3 +22,4 @@ jobs:
             --name github \
             "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
       - run: dotnet pack --configuration Release
+      - run: dotnet nuget push "**/*-ci.${{ github.sha }}.nupkg" --api-key ${{ secrets.NUGET_GITHUB_TOKEN }} --source github
