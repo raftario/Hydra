@@ -7,6 +7,7 @@ Server.HttpHandler handler = handlerName?.ToLower() switch
     "echo" => Handlers.Echo,
     "headers" => Handlers.Headers,
     "file" => Handlers.File,
+    "cats" => Handlers.Cats,
     _ => Handlers.Hello,
 };
 
@@ -21,4 +22,5 @@ using var server = await Server.At(hostname, port, async (req) =>
     Console.WriteLine($"[{req.Remote}]: {req.Method} {req.Uri} => {res.Status}");
     return res;
 });
+server.Exception += (s, e) => Console.Error.WriteLine(e.Exception);
 await server.Run();
