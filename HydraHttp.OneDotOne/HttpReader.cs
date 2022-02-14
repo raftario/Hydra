@@ -25,10 +25,11 @@ namespace HydraHttp.OneDotOne
         /// Reads the start line
         /// </summary>
         /// <returns>
-        /// <see cref="Status.Complete"/> and the start line on success,
-        /// or <see cref="Status.Incomplete"/> if parsing cannot complete
+        /// <see cref="ParseStatus.Complete"/> and the start line on success,
+        /// or <see cref="ParseStatus.Incomplete"/> if parsing cannot complete
         /// </returns>
-        public async ValueTask<Result<StartLine>> ReadStartLine(CancellationToken cancellationToken = default)
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public async ValueTask<ParseResult<StartLine>> ReadStartLine(CancellationToken cancellationToken = default)
         {
             while (true)
             {
@@ -46,11 +47,11 @@ namespace HydraHttp.OneDotOne
                         consumed = bytes.Position;
                         examined = consumed;
 
-                        return new(Status.Complete, new(method, uri, version));
+                        return new(ParseStatus.Complete, new(method, uri, version));
                     }
 
                     if (buffer.Length > MaxStartLineLength) throw new StartLineTooLongException();
-                    if (result.IsCompleted) return new(Status.Incomplete);
+                    if (result.IsCompleted) return new(ParseStatus.Incomplete);
                 }
                 finally
                 {

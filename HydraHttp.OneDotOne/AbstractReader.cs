@@ -27,11 +27,12 @@ namespace HydraHttp.OneDotOne
         /// Reads a single header
         /// </summary>
         /// <returns>
-        /// <see cref="Status.Complete"/> and the header on success,
-        /// <see cref="Status.Finished"/> if there are no more headers left,
-        /// or <see cref="Status.Incomplete"/> if parsing cannot complete
+        /// <see cref="ParseStatus.Complete"/> and the header on success,
+        /// <see cref="ParseStatus.Finished"/> if there are no more headers left,
+        /// or <see cref="ParseStatus.Incomplete"/> if parsing cannot complete
         /// </returns>
-        public async ValueTask<Result<Header>> ReadHeader(CancellationToken cancellationToken = default)
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public async ValueTask<ParseResult<Header>> ReadHeader(CancellationToken cancellationToken = default)
         {
             while (true)
             {
@@ -45,17 +46,17 @@ namespace HydraHttp.OneDotOne
                 try
                 {
                     var status = ParseHeader(ref bytes, out string? name, out string? value);
-                    if (status != Status.Incomplete)
+                    if (status != ParseStatus.Incomplete)
                     {
                         consumed = bytes.Position;
                         examined = consumed;
                     }
 
-                    if (status == Status.Complete) return new(Status.Complete, new(name!, value!));
-                    if (status == Status.Finished) return new(Status.Finished);
+                    if (status == ParseStatus.Complete) return new(ParseStatus.Complete, new(name!, value!));
+                    if (status == ParseStatus.Finished) return new(ParseStatus.Finished);
 
                     if (buffer.Length > MaxHeaderLength) throw new HeaderTooLongException();
-                    if (result.IsCompleted) return new(Status.Incomplete);
+                    if (result.IsCompleted) return new(ParseStatus.Incomplete);
                 }
                 finally
                 {
@@ -94,7 +95,7 @@ namespace HydraHttp.OneDotOne
         /// <param name="value">Header value</param>
         /// <returns>false if the data is incomplete</returns>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        protected static Status ParseHeader(ref Bytes bytes, out string? name, out string? value)
+        protected static ParseStatus ParseHeader(ref Bytes bytes, out string? name, out string? value)
         {
             name = null;
             value = null;
@@ -104,11 +105,11 @@ namespace HydraHttp.OneDotOne
             {
                 if (b == '\r')
                 {
-                    if (!bytes.Next(out b)) return Status.Incomplete;
+                    if (!bytes.Next(out b)) return ParseStatus.Incomplete;
                     else if (b != '\n') throw new InvalidNewlineException();
-                    return Status.Finished;
+                    return ParseStatus.Finished;
                 }
-                else if (b == '\n') return Status.Finished;
+                else if (b == '\n') return ParseStatus.Finished;
                 else if (b == ':')
                 {
                     name = bytes.Read(-1).AsAscii();
@@ -116,7 +117,7 @@ namespace HydraHttp.OneDotOne
                 }
                 else if (!b.IsAsciiHeaderName()) throw new InvalidHeaderNameException();
             }
-            if (name is null) return Status.Incomplete;
+            if (name is null) return ParseStatus.Incomplete;
 
             while (bytes.Peek(out b))
             {
@@ -130,7 +131,7 @@ namespace HydraHttp.OneDotOne
             {
                 if (b == '\r')
                 {
-                    if (!bytes.Next(out b)) return Status.Incomplete;
+                    if (!bytes.Next(out b)) return ParseStatus.Incomplete;
                     else if (b != '\n') throw new InvalidNewlineException();
 
                     value = bytes.Read(valueEndOffset - 2).AsAscii();
@@ -145,7 +146,7 @@ namespace HydraHttp.OneDotOne
                 else if (!b.IsAsciiHeaderValue()) throw new InvalidHeaderValueException();
                 else valueEndOffset = 0;
             }
-            return value is null ? Status.Incomplete : Status.Complete;
+            return value is null ? ParseStatus.Incomplete : ParseStatus.Complete;
         }
 
         /// <summary>

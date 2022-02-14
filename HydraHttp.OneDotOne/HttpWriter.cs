@@ -78,6 +78,7 @@ namespace HydraHttp.OneDotOne
         /// Flushes the status line and headers to the underlying connection and send the given response body
         /// </summary>
         /// <returns>A task that completes once the body is fully written to the underlying connection</returns>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public async ValueTask Send(Stream body, CancellationToken cancellationToken = default)
         {
             var memory = Writer.GetMemory(2);

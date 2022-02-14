@@ -5,7 +5,7 @@ namespace HydraHttp.OneDotOne
     /// <summary>
     /// A parsing operation status
     /// </summary>
-    public enum Status
+    public enum ParseStatus
     {
         /// <summary>
         /// Parsing of the element complete
@@ -25,8 +25,8 @@ namespace HydraHttp.OneDotOne
     /// </summary>
     /// <typeparam name="T">Parsed element type</typeparam>
     /// <param name="Status">Parsing status</param>
-    /// <param name="Value">Parsed element if the status is <see cref="Status.Complete"/></param>
-    public readonly record struct Result<T>(Status Status, T? Value = null) where T : struct
+    /// <param name="Value">Parsed element if the status is <see cref="ParseStatus.Complete"/></param>
+    public readonly record struct ParseResult<T>(ParseStatus Status, T? Value = null) where T : struct
     {
         /// <summary>
         /// Obtains the parsed element if parsing completed
@@ -36,16 +36,16 @@ namespace HydraHttp.OneDotOne
         public bool Complete([NotNullWhen(true)] out T? value)
         {
             value = Value;
-            return Status == Status.Complete;
+            return Status == ParseStatus.Complete;
         }
         /// <summary>
-        /// Whether the parsing status is <see cref="Status.Incomplete"/>
+        /// Whether the parsing status is <see cref="ParseStatus.Incomplete"/>
         /// </summary>
-        public bool Incomplete => Status == Status.Incomplete;
+        public bool Incomplete => Status == ParseStatus.Incomplete;
         /// <summary>
-        /// Whether the parsing status is <see cref="Status.Finished"/>
+        /// Whether the parsing status is <see cref="ParseStatus.Finished"/>
         /// </summary>
-        public bool Finished => Status == Status.Finished;
+        public bool Finished => Status == ParseStatus.Finished;
     }
 
     /// <summary>

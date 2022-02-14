@@ -134,11 +134,11 @@ namespace HydraHttp
             while (true)
             {
                 var client = await listener.AcceptAsync(cancellationToken);
-                _ = Task.Run(() => Client(client, cancellationToken), cancellationToken);
+                _ = Task.Run(() => HttpClient(client, cancellationToken), cancellationToken);
             }
         }
 
-        private async Task Client(Socket client, CancellationToken cancellationToken)
+        private async Task HttpClient(Socket client, CancellationToken cancellationToken)
         {
             Stream stream = new NetworkStream(client, true);
             if (cert is not null)

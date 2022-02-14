@@ -24,10 +24,11 @@ namespace HydraHttp.OneDotOne
         /// </summary>
         /// <param name="prefixNewline">Whether to consume a prefixed newline before reading the length</param>
         /// <returns>
-        /// <see cref="Status.Complete"/> and the chunk length on success,
-        /// or <see cref="Status.Incomplete"/> if parsing cannot complete
+        /// <see cref="ParseStatus.Complete"/> and the chunk length on success,
+        /// or <see cref="ParseStatus.Incomplete"/> if parsing cannot complete
         /// </returns>
-        public async ValueTask<Result<int>> ReadChunkSize(bool prefixNewline = false, CancellationToken cancellationToken = default)
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public async ValueTask<ParseResult<int>> ReadChunkSize(bool prefixNewline = false, CancellationToken cancellationToken = default)
         {
             while (true)
             {
@@ -45,11 +46,11 @@ namespace HydraHttp.OneDotOne
                         consumed = bytes.Position;
                         examined = consumed;
 
-                        return new(Status.Complete, length);
+                        return new(ParseStatus.Complete, length);
                     }
 
                     if (buffer.Length > MaxChunkSizeLength) throw new ChunkSizeTooLongException();
-                    if (result.IsCompleted) return new(Status.Incomplete);
+                    if (result.IsCompleted) return new(ParseStatus.Incomplete);
                 }
                 finally
                 {
