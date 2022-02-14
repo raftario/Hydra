@@ -81,7 +81,7 @@ namespace HydraHttp
             while (true)
             {
                 var client = await listener.AcceptAsync(cancellationToken);
-                Task.Run(() => Client(client, cancellationToken));
+                _ = Task.Run(() => Client(client, cancellationToken), cancellationToken);
             }
         }
 
