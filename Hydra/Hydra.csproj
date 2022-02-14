@@ -6,10 +6,10 @@
 
     <PackageId>$(AssemblyName.Replace("Hydra", "HydraServer"))</PackageId>
     <Title>$(AssemblyName)</Title>
-    <Version>0.1.0</Version>
+    <Version Condition="'$(CI)' != 'true'">0.1.0</Version>
+    <Version Condition="'$(CI)' == 'true'">0.1.0-ci.$(GITHUB_SHA)</Version>
     <Authors>raftario</Authors>
-    <RepositoryUrl>https://github.com/raftario/Hydra.git</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/raftario/Hydra</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/raftario/Hydra</RepositoryUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 
     <Description>A simple streaming webserver</Description>
