@@ -28,12 +28,12 @@ Finally, Hydra is unsurprising. It never tries to be smart and only does the bar
 
 ## Usage
 
-You can take a look at usage examples in the [example project](./HydraHttp.Example/) and run them using `dotnet run --project HydraHttp.Example -- <EXAMPLE> [<HOSTNAME>] [<PORT>]`
+You can take a look at usage examples in the [example project](./Hydra.Example/) and run them using `dotnet run --project Hydra.Example -- <EXAMPLE> [<HOSTNAME>] [<PORT>]`
 
 ### Basic
 
 ```cs
-using HydraHttp;
+using Hydra;
 using System.Text;
 
 using var server = await Server.At("localhost", 8080, (req) =>
