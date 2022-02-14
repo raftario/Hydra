@@ -3,6 +3,18 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
+
+    <PackageId>$(AssemblyName.Replace("Hydra", "HydraServer"))</PackageId>
+    <Title>$(AssemblyName)</Title>
+    <Version>0.1.0</Version>
+    <Authors>raftario</Authors>
+    <RepositoryUrl>https://github.com/raftario/Hydra.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/raftario/Hydra</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+
+    <Description>A simple streaming webserver</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>http;websockets;server</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,6 +23,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Hydra.Http11\Hydra.Http11.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="/"/>
   </ItemGroup>
 
 </Project>
