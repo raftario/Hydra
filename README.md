@@ -5,7 +5,7 @@ A simple streaming webserver that runs anywhere .NET 6 runs
 ## Why
 
 ASP.NET Core doesn't support running on MAUI targets (Android, iOS, etc.). It's also pretty bulky and, in my opinion, extremely annoying to use for small to medium sized projects.
-After trying alternatives for a project without finding anyting satisfying, a friend made a joke about writing our own. Two days of hyperfocusing later I'm writing this.
+After trying alternatives for a project without finding anyting satisfying, a friend made a joke about writing our own. Two days of hyperfocusing later I'm writing this readme.
 
 Unlike ASP, Hydra is very simple and barebones. I like to think it exists at an abstraction level where it's both usable as is and for building frameworks upon.
 However, it doesn't support HTTP/2.0 and is nowhere near as feature packed as ASP.
@@ -28,7 +28,7 @@ Finally, Hydra is unsurprising. It never tries to be smart and only does the bar
 
 ## Usage
 
-You can take a look at usage examples in the [HydraHttp.Example](./HydraHttp.Example/) project and run them using `dotnet run --project HydraHttp.Example -- <EXAMPLE> [<HOSTNAME>] [<PORT>]`
+You can take a look at usage examples in the [example project](./HydraHttp.Example/) and run them using `dotnet run --project HydraHttp.Example -- <EXAMPLE> [<HOSTNAME>] [<PORT>]`
 
 ### Basic
 
