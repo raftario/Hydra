@@ -1,5 +1,6 @@
 ﻿using HydraHttp.OneDotOne;
 using System;
+using System.Buffers;
 using System.IO;
 using System.IO.Pipelines;
 using System.Net;
@@ -132,7 +133,8 @@ namespace HydraHttp
                         continue;
                     }
 
-                    if (await httpWriter.WriteResponse(response, request.Method, cancellationToken)) return;
+                    if (await httpWriter.WriteResponse(response, request, cancellationToken)) return;
+                    await Drain(request.Body, cancellationToken);
                 }
             }
             catch (TaskCanceledException) { }
@@ -143,6 +145,22 @@ namespace HydraHttp
             finally
             {
                 await stream.DisposeAsync();
+            }
+        }
+
+        public static async ValueTask Drain(Stream stream, CancellationToken cancellationToken)
+        {
+            var pool = ArrayPool<byte>.Shared;
+            var buffer = pool.Rent(4096);
+            int read = 1;
+
+            try
+            {
+                while (read > 0) read = await stream.ReadAsync(buffer, cancellationToken);
+            }
+            finally
+            {
+                pool.Return(buffer);
             }
         }
 

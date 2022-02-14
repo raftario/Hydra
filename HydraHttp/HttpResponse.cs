@@ -23,14 +23,14 @@ namespace HydraHttp
 
     public static class WriterExtensions
     {
-        public static async ValueTask<bool> WriteResponse(this HttpWriter writer, HttpResponse response, string requestMethod, CancellationToken cancellationToken = default)
+        public static async ValueTask<bool> WriteResponse(this HttpWriter writer, HttpResponse response, HttpRequest request, CancellationToken cancellationToken = default)
         {
             var needsClose = response.Headers.TryGetValue("Transfer-Encoding", out var te)
                 && !te.ToString().TrimEnd().EndsWith("chunked", StringComparison.OrdinalIgnoreCase);
             needsClose = needsClose || !response.Headers.ContainsKey("Content-Length");
 
-            if (requestMethod == "HEAD") response.Body = HttpEmptyBodyStream.Body;
-            else if (requestMethod == "CONNECT" && response.Status >= 200 && response.Status < 300) response.Body = HttpEmptyBodyStream.Body;
+            if (request.Method == "HEAD") response.Body = HttpEmptyBodyStream.Body;
+            else if (request.Method == "CONNECT" && response.Status >= 200 && response.Status < 300) response.Body = HttpEmptyBodyStream.Body;
             else if ((response.Status >= 100 && response.Status < 200) || response.Status == 204 || response.Status == 304) response.Body = HttpEmptyBodyStream.Body;
 
             writer.WriteStatusLine(new(response.Status, response.Reason));
