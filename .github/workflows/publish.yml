@@ -14,6 +14,7 @@ jobs:
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 6.0.x
+      - run: echo "TAG=ci.$(date +%s).${{ github.sha }}" >> $GITHUB_ENV
       - run: |
           dotnet nuget add source \
             --username ${{ github.actor }} \
@@ -22,4 +23,4 @@ jobs:
             --name github \
             "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
       - run: dotnet pack --configuration Release
-      - run: dotnet nuget push "**/*-ci.${{ github.sha }}.nupkg" --api-key ${{ secrets.NUGET_GITHUB_TOKEN }} --source github
+      - run: dotnet nuget push "**/*-$TAG.nupkg" --api-key ${{ secrets.NUGET_GITHUB_TOKEN }} --source github
