@@ -6,19 +6,33 @@ using System.Threading.Tasks;
 
 namespace HydraHttp.OneDotOne
 {
+    /// <summary>
+    /// A reader for chunked bodies
+    /// </summary>
     public class ChunkedReader : AbstractReader
     {
+        /// <summary>
+        /// Maximum length to process in attempt to parse a chunk length before bailing
+        /// </summary>
         public int MaxChunkSizeLength = 2048;
 
         public ChunkedReader(PipeReader reader) : base(reader) { }
 
+        /// <summary>
+        /// Reads a chunk size
+        /// </summary>
+        /// <param name="prefixNewline">Whether to consume a prefixed newline before reading the length</param>
+        /// <returns>
+        /// <see cref="Status.Complete"/> and the chunk length on success,
+        /// or <see cref="Status.Incomplete"/> if parsing cannot complete
+        /// </returns>
         public async ValueTask<Result<int>> ReadChunkSize(bool prefixNewline = false, CancellationToken cancellationToken = default)
         {
             while (true)
             {
                 var result = await Reader.ReadAsync(cancellationToken);
                 var buffer = result.Buffer;
-                var bytes = buffer.ByteWalker();
+                var bytes = buffer.Bytes();
 
                 var consumed = buffer.Start;
                 var examined = buffer.End;
@@ -43,12 +57,18 @@ namespace HydraHttp.OneDotOne
             }
         }
 
+        /// <summary>
+        /// Parses a chunk size
+        /// </summary>
+        /// <param name="prefixNewline">Whether to consume a prefixed newline before reading the length</param>
+        /// <param name="length">Chunk length</param>
+        /// <returns>false if the data is incomplete</returns>
         internal static bool ParseChunkSize(ref Bytes bytes, bool prefixNewline, out int length)
         {
             length = default;
             string? hex = null;
 
-            if (prefixNewline && !ParseNewLine(ref bytes)) return false;
+            if (prefixNewline && !Consume(ref bytes)) return false;
 
             while (bytes.Peek(out byte b))
             {
@@ -69,7 +89,7 @@ namespace HydraHttp.OneDotOne
             if (hex is null) return false;
 
             length = int.Parse(hex, NumberStyles.HexNumber);
-            return ParseNewLine(ref bytes);
+            return Consume(ref bytes);
         }
     }
 }

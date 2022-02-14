@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 
 namespace HydraHttp
 {
+    /// <summary>
+    /// A wrapper around a stream that limits the amount of data that can be read from it
+    /// </summary>
     public class HttpSizedBodyStream : HttpBodyStream
     {
         private readonly Stream stream;
@@ -13,6 +16,11 @@ namespace HydraHttp
 
         private int Count(int count) => Math.Min(count, length - n);
 
+        /// <summary>
+        /// Wraps the given stream for length limitation
+        /// </summary>
+        /// <param name="stream">Stream to wrap</param>
+        /// <param name="length">Length to limit to</param>
         public HttpSizedBodyStream(Stream stream, int length)
         {
             this.stream = stream;
@@ -21,7 +29,6 @@ namespace HydraHttp
 
         public override bool CanRead => stream.CanRead;
         public override bool CanSeek => false;
-        public override bool CanWrite => false;
 
         public override long Length => length;
         public override long Position { get => n; set => throw new NotSupportedException(); }

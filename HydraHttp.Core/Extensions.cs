@@ -5,8 +5,14 @@ namespace HydraHttp.Core
 {
     public static class ReadOnlyByteSequenceExtensions
     {
-        public static Bytes ByteWalker(this ReadOnlySequence<byte> sequence) => new(sequence);
+        /// <summary>
+        /// Returns an instance of <see cref="Bytes"/> for this sequence
+        /// </summary>
+        public static Bytes Bytes(this ReadOnlySequence<byte> sequence) => new(sequence);
 
+        /// <summary>
+        /// Decodes the contents of this sequence as ASCII
+        /// </summary>
         public static string AsAscii(this ReadOnlySequence<byte> sequence)
         {
             if (sequence.IsSingleSegment) return Encoding.ASCII.GetString(sequence.FirstSpan);

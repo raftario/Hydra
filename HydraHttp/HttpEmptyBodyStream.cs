@@ -5,14 +5,19 @@ using System.Threading.Tasks;
 
 namespace HydraHttp
 {
+    /// <summary>
+    /// An empty body stream which is always done reading and never returns any data
+    /// </summary>
     public class HttpEmptyBodyStream : HttpBodyStream
     {
-        public static readonly Stream Body = new HttpEmptyBodyStream();
+        /// <summary>
+        /// Shared empty body stream
+        /// </summary>
+        public static readonly HttpBodyStream Body = new HttpEmptyBodyStream();
         private HttpEmptyBodyStream() { }
 
         public override bool CanRead => true;
         public override bool CanSeek => false;
-        public override bool CanWrite => false;
 
         public override long Length => 0;
         public override long Position { get => 0; set => throw new NotSupportedException(); }

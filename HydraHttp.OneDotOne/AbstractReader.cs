@@ -1,14 +1,18 @@
 ﻿using HydraHttp.Core;
-using System;
-using System.Buffers;
 using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HydraHttp.OneDotOne
 {
+    /// <summary>
+    /// An abstract reader containing fields and methods shared across specific formats
+    /// </summary>
     public abstract class AbstractReader
     {
+        /// <summary>
+        /// Maximum length to process in attempt to parse a single header before bailing
+        /// </summary>
         public int MaxHeaderLength = 8192;
 
         public readonly PipeReader Reader;
@@ -18,13 +22,21 @@ namespace HydraHttp.OneDotOne
             Reader = reader;
         }
 
+        /// <summary>
+        /// Reads a single header
+        /// </summary>
+        /// <returns>
+        /// <see cref="Status.Complete"/> and the header on success,
+        /// <see cref="Status.Finished"/> if there are no more headers left,
+        /// or <see cref="Status.Incomplete"/> if parsing cannot complete
+        /// </returns>
         public async ValueTask<Result<Header>> ReadHeader(CancellationToken cancellationToken = default)
         {
             while (true)
             {
                 var result = await Reader.ReadAsync(cancellationToken);
                 var buffer = result.Buffer;
-                var bytes = buffer.ByteWalker();
+                var bytes = buffer.Bytes();
 
                 var consumed = buffer.Start;
                 var examined = buffer.End;
@@ -51,6 +63,10 @@ namespace HydraHttp.OneDotOne
             }
         }
 
+        /// <summary>
+        /// Skips empty lines
+        /// </summary>
+        /// <returns>false if the data is incomplete</returns>
         protected static bool SkipEmptyLines(ref Bytes bytes)
         {
             while (bytes.Peek(out byte b))
@@ -69,6 +85,12 @@ namespace HydraHttp.OneDotOne
             return true;
         }
 
+        /// <summary>
+        /// Parses a single header
+        /// </summary>
+        /// <param name="name">Header name</param>
+        /// <param name="value">Header value</param>
+        /// <returns>false if the data is incomplete</returns>
         protected static Status ParseHeader(ref Bytes bytes, out string? name, out string? value)
         {
             name = null;
@@ -125,7 +147,11 @@ namespace HydraHttp.OneDotOne
             return Status.Complete;
         }
 
-        internal static bool ParseNewLine(ref Bytes bytes)
+        /// <summary>
+        /// Consumes a single newline
+        /// </summary>
+        /// <returns>false if the data is incomplete</returns>
+        internal static bool Consume(ref Bytes bytes)
         {
             if (!bytes.Next(out byte b)) return false;
             if (b == '\r')

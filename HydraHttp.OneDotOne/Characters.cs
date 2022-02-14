@@ -1,7 +1,7 @@
 ﻿namespace HydraHttp.OneDotOne
 {
     // https://github.com/seanmonstar/httparse
-    static internal class Characters
+    internal static class Characters
     {
         private static readonly bool[] uriMap = new[]
         {

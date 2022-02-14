@@ -17,6 +17,9 @@ namespace HydraHttp.OneDotOne
             Writer = writer;
         }
 
+        /// <summary>
+        /// Writes the given status line
+        /// </summary>
         public void WriteStatusLine(StatusLine statusLine)
         {
             var statusString = statusLine.Status.ToString();
@@ -43,6 +46,9 @@ namespace HydraHttp.OneDotOne
             Writer.Advance(length);
         }
 
+        /// <summary>
+        /// Writes a single given header
+        /// </summary>
         public void WriteHeader(Header header)
         {
             int nameIdx = 0;
@@ -65,6 +71,10 @@ namespace HydraHttp.OneDotOne
             Writer.Advance(length);
         }
 
+        /// <summary>
+        /// Flushes the status line and headers to the underlying connection and send the given response body
+        /// </summary>
+        /// <returns>A task that completes once the body is fully written to the underlying connection</returns>
         public async ValueTask Send(Stream body, CancellationToken cancellationToken = default)
         {
             var memory = Writer.GetMemory(2);
