@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -65,6 +66,7 @@ namespace HydraHttp.OneDotOne
         /// <param name="uri">URI</param>
         /// <param name="version">Minor version</param>
         /// <returns>false if the data is incomplete</returns>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         internal static bool ParseStartLine(ref Bytes bytes, [NotNullWhen(true)] out string? method, [NotNullWhen(true)] out string? uri, out int version)
         {
             method = null;
@@ -84,6 +86,7 @@ namespace HydraHttp.OneDotOne
         /// </summary>
         /// <param name="token">Token</param>
         /// <returns>false if the data is incomplete</returns>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         internal static bool ParseToken(ref Bytes bytes, [NotNullWhen(true)] out string? token)
         {
             while (bytes.Next(out byte b))
@@ -105,6 +108,7 @@ namespace HydraHttp.OneDotOne
         /// </summary>
         /// <param name="uri">URI</param>
         /// <returns>false if the data is incomplete</returns>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         internal static bool ParseUri(ref Bytes bytes, [NotNullWhen(true)] out string? uri)
         {
             while (bytes.Next(out byte b))
@@ -126,6 +130,7 @@ namespace HydraHttp.OneDotOne
         /// </summary>
         /// <param name="version">Minor version</param>
         /// <returns>false if the data is incomplete</returns>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         internal static bool ParseVersion(ref Bytes bytes, out int version)
         {
             version = default;

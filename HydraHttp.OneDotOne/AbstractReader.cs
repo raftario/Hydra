@@ -1,5 +1,6 @@
 ﻿using HydraHttp.Core;
 using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -67,6 +68,7 @@ namespace HydraHttp.OneDotOne
         /// Skips empty lines
         /// </summary>
         /// <returns>false if the data is incomplete</returns>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         protected static bool SkipEmptyLines(ref Bytes bytes)
         {
             while (bytes.Peek(out byte b))
@@ -91,6 +93,7 @@ namespace HydraHttp.OneDotOne
         /// <param name="name">Header name</param>
         /// <param name="value">Header value</param>
         /// <returns>false if the data is incomplete</returns>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         protected static Status ParseHeader(ref Bytes bytes, out string? name, out string? value)
         {
             name = null;
@@ -151,6 +154,7 @@ namespace HydraHttp.OneDotOne
         /// Consumes a single newline
         /// </summary>
         /// <returns>false if the data is incomplete</returns>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         internal static bool ConsumeNewline(ref Bytes bytes)
         {
             if (!bytes.Next(out byte b)) return false;

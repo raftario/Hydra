@@ -1,6 +1,7 @@
 ﻿using HydraHttp.Core;
 using System.Globalization;
 using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -63,6 +64,7 @@ namespace HydraHttp.OneDotOne
         /// <param name="prefixNewline">Whether to consume a prefixed newline before reading the length</param>
         /// <param name="length">Chunk length</param>
         /// <returns>false if the data is incomplete</returns>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         internal static bool ParseChunkSize(ref Bytes bytes, bool prefixNewline, out int length)
         {
             length = default;

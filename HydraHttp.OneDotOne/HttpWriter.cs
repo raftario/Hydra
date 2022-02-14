@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,7 @@ namespace HydraHttp.OneDotOne
         /// <summary>
         /// Writes the given status line
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void WriteStatusLine(StatusLine statusLine)
         {
             var statusString = statusLine.Status.ToString();
@@ -49,6 +51,7 @@ namespace HydraHttp.OneDotOne
         /// <summary>
         /// Writes a single given header
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void WriteHeader(Header header)
         {
             int nameIdx = 0;
