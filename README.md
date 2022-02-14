@@ -49,10 +49,6 @@ await server.Run();
 ### TLS
 
 ```cs
-using HydraHttp;
-
-// ...
-
 using var server = await Server.At(hostname, port, handler);
 await server.Tls("./tls/cert.pem", "./tls/key.rsa");
 await server.Run();
@@ -61,11 +57,6 @@ await server.Run();
 ### Unix
 
 ```cs
-using HydraHttp;
-using System.Net.Sockets;
-
-// ...
-
 var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
 socket.Bind(new UnixDomainSocketEndPoint(path));
 socket.Listen();
