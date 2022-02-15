@@ -83,7 +83,6 @@ namespace Hydra
 
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
             ReadAsync(new(buffer, offset, count), cancellationToken).AsTask();
-        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-        public override int Read(Span<byte> buffer) => throw new NotSupportedException();
+        public override int Read(byte[] buffer, int offset, int count) => ReadAsync(buffer, offset, count).Result;
     }
 }

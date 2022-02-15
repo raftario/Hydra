@@ -1,4 +1,4 @@
-﻿using Hydra.WebSocket;
+﻿using Hydra.WebSocket13;
 using System;
 using System.IO;
 using System.Threading;
