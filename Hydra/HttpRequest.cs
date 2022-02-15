@@ -183,7 +183,9 @@ namespace Hydra
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         internal async ValueTask Drain()
         {
-            await ReadHeaders();
+            try { await ReadHeaders(); }
+            catch (HttpBadRequestException) { }
+            catch (ConnectionClosedException) { }
 
             var pool = ArrayPool<byte>.Shared;
             byte[] buffer = pool.Rent(4096);
