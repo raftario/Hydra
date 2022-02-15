@@ -4,8 +4,10 @@ namespace Hydra.Example
 {
     public static partial class Handlers
     {
-        public static Task<HttpResponse> Headers(HttpRequest request)
+        public static async Task<HttpResponse> Headers(HttpRequest request)
         {
+            await request.ReadHeaders();
+
             var body = new MemoryStream();
             foreach (var (name, value) in request.Headers)
                 body.Write(Encoding.UTF8.GetBytes($"{name}: {value}\n"));
@@ -15,7 +17,7 @@ namespace Hydra.Example
             response.Headers["Content-Length"] = body.Length.ToString();
             response.Headers["Content-Type"] = "text/plain; encoding=utf-8";
 
-            return Task.FromResult(response);
+            return response;
         }
     }
 }

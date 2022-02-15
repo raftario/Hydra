@@ -5,7 +5,7 @@ using TestUtils;
 namespace Hydra.Tests
 {
     [TestClass]
-    public class HttpSizedBodyStreamTests
+    public class SizedStreamTests
     {
         [TestMethod]
         public void Limits()
@@ -14,7 +14,7 @@ namespace Hydra.Tests
             stream.Write("0123456789".AsBytes());
             stream.Position = 0;
 
-            var bodyStream = new HttpSizedBodyStream(stream, 5);
+            var bodyStream = new SizedStream(stream, 5);
             Assert.AreEqual("01234", bodyStream.AsText());
         }
     }

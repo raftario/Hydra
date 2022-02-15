@@ -1,7 +1,8 @@
 ﻿using Hydra.Http11;
-using Microsoft.Extensions.Primitives;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -36,6 +37,7 @@ namespace Hydra
         /// </summary>
         internal readonly Socket socket;
         internal readonly HttpReader reader;
+        private Stream? body = null;
 
         /// <summary>
         /// Request method
@@ -54,11 +56,18 @@ namespace Hydra
         /// <summary>
         /// Request headers
         /// </summary>
-        public HttpHeaders Headers { get; }
+        public HttpHeaders Headers { get; } = new();
         /// <summary>
         /// Request body
         /// </summary>
-        public HttpBodyStream Body { get; set; }
+        /// <exception cref="HeadersNotReadException">
+        /// Thrown when trying to access the body before the headers have been read
+        /// </exception>
+        public Stream Body
+        {
+            get => body ?? throw new HeadersNotReadException();
+            private set => body = value;
+        }
         /// <summary>
         /// Request body encoding
         /// 
@@ -66,7 +75,7 @@ namespace Hydra
         /// and users should instead push and pop from this stack to indicate the
         /// current encoding layers of the body
         /// </summary>
-        public Stack<string> Encoding { get; }
+        public Stack<string> Encoding { get; } = new();
 
         /// <summary>
         /// Endpoint of the client the request originated from
@@ -85,9 +94,6 @@ namespace Hydra
             string method,
             string uri,
             int version,
-            HttpHeaders headers,
-            HttpBodyStream body,
-            Stack<string> encoding,
             Socket socket,
             HttpReader reader,
             CancellationToken cancellationToken)
@@ -100,14 +106,104 @@ namespace Hydra
                 1 => HttpVersion.Http11,
                 _ => throw new NotSupportedException(),
             };
-            Headers = headers;
-            Body = body;
-            Encoding = encoding;
             CancellationToken = cancellationToken;
 
             this.socket = socket;
             this.reader = reader;
         }
+
+        /// <summary>
+        /// Reads the request headers if they haven't been yet
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async ValueTask ReadHeaders()
+        {
+            if (body != null) return;
+            if (!await reader.ReadHeaders(Headers, CancellationToken)) throw new ConnectionClosedException();
+            Validate();
+        }
+
+        /// <summary>
+        /// Validates the request
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        private void Validate()
+        {
+            // HTTP/1.1 requests must contain a Host header
+            if (Version == HttpVersion.Http10 && (!Headers.TryGetValue("Host", out var host) || host.Count > 1)) throw new InvalidHostException();
+
+            // requests containing both Transfer-Encoding and Content-Length headers are invalid and should be rejected
+            if (Headers.ContainsKey("Transfer-Encoding") && Headers.ContainsKey("Content-Length")) throw new TransferEncodingAndContentLengthException();
+
+            // push content encodings to our stack first if any
+            if (Headers.TryGetValue("Content-Encoding", out var ce))
+            {
+                foreach (string value in ce) Encoding.Push(value);
+            }
+
+            if (Headers.TryGetValue("Transfer-Encoding", out var te))
+            {
+                // push transfer encodings to our stack
+                foreach (string value in te) Encoding.Push(value);
+
+                // if we have transfer encodings the outermost one must be chunk or the body isn't readable
+                if (Encoding.TryPeek(out string? e) && e.Equals("chunked", StringComparison.OrdinalIgnoreCase))
+                {
+                    body = new HttpChunkedBodyStream(reader.Reader, Headers);
+                    Encoding.Pop();
+                }
+                else throw new UnknownBodyLengthException();
+            }
+            else if (Headers.TryGetValue("Content-Length", out var cl))
+            {
+                int length;
+
+                // there is one content length value but it's not readable as an integer
+                if (cl.Count == 1)
+                {
+                    if (!int.TryParse(cl, out length)) throw new InvalidContentLengthException();
+                }
+                else
+                {
+                    // if there are many content length values they must all be identical and readable as integers
+                    string[] distinct = cl.Distinct().ToArray();
+                    if (distinct.Length != 1 || !int.TryParse(distinct[0], out length)) throw new InvalidContentLengthException();
+                }
+
+                body = new SizedStream(reader.Body, length);
+            }
+            // if a request has neither Transfer-Encoding nor Content-Length headers it is assumed to have an empty body
+            else body = EmptyStream.Body;
+        }
+
+        /// <summary>
+        /// Drains the headers and body to prepare the underlying connection for the next request
+        /// </summary>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        internal async ValueTask Drain()
+        {
+            await ReadHeaders();
+
+            var pool = ArrayPool<byte>.Shared;
+            byte[] buffer = pool.Rent(4096);
+            int read = 1;
+
+            try
+            {
+                while (read > 0) read = await body!.ReadAsync(buffer, CancellationToken);
+            }
+            finally
+            {
+                pool.Return(buffer);
+            }
+        }
+
+        /// <summary>
+        /// An exception thrown by the server when trying to access the body
+        /// before the headers have been read
+        /// </summary>
+        public class HeadersNotReadException : Exception { }
 
         /// <summary>
         /// An exception thrown by the server if a request has both
@@ -143,70 +239,13 @@ namespace Hydra
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public static async ValueTask<HttpRequest?> ReadRequest(this HttpReader reader, Socket socket, CancellationToken cancellationToken = default)
         {
-            // read the start line
             var startLineResult = await reader.ReadStartLine(cancellationToken);
             if (!startLineResult.Complete(out var startLine)) return null;
-
-            // read the headers
-            var headers = new HttpHeaders();
-            if (!await reader.ReadHeaders(headers, cancellationToken)) return null;
-
-            // HTTP/1.1 requests must contain a Host header
-            if (startLine.Value.Version == 1 && (!headers.TryGetValue("Host", out var host) || host.Count > 1)) throw new HttpRequest.InvalidHostException();
-
-            // requests containing both Transfer-Encoding and Content-Length headers are invalid and should be rejected
-            if (headers.ContainsKey("Transfer-Encoding") && headers.ContainsKey("Content-Length")) throw new HttpRequest.TransferEncodingAndContentLengthException();
-
-            HttpBodyStream body;
-            var encoding = new Stack<string>();
-
-            // push content encodings to our stack first if any
-            if (headers.TryGetValue("Content-Encoding", out var ce))
-            {
-                foreach (string value in ce) encoding.Push(value);
-            }
-            
-            if (headers.TryGetValue("Transfer-Encoding", out var te))
-            {
-                // push transfer encodings to our stack
-                foreach (string value in te) encoding.Push(value);
-
-                // if we have transfer encodings the outermost one must be chunk or the body isn't readable
-                if (encoding.TryPeek(out string? e) && e.Equals("chunked", StringComparison.OrdinalIgnoreCase))
-                {
-                    body = new HttpChunkedBodyStream(reader.Reader);
-                    encoding.Pop();
-                }
-                else throw new HttpRequest.UnknownBodyLengthException();
-            }
-            else if (headers.TryGetValue("Content-Length", out var cl))
-            {
-                int length;
-
-                // there is one content length value but it's not readable as an integer
-                if (cl.Count == 1)
-                {
-                    if (!int.TryParse(cl, out length)) throw new HttpRequest.InvalidContentLengthException();
-                }
-                else
-                {
-                    // if there are many content length values they must all be identical and readable as integers
-                    string[] distinct = cl.Distinct().ToArray();
-                    if (distinct.Length != 1 || !int.TryParse(distinct[0], out length)) throw new HttpRequest.InvalidContentLengthException();
-                }
-
-                body = new HttpSizedBodyStream(reader.Body, length);
-            }
-            // if a request has neither Transfer-Encoding nor Content-Length headers it is assumed to have an empty body
-            else body = HttpEmptyBodyStream.Body;
 
             return new HttpRequest(
                 startLine.Value.Method,
                 startLine.Value.Uri,
                 startLine.Value.Version,
-                headers,
-                body,
-                encoding,
                 socket,
                 reader,
                 cancellationToken);

@@ -5,15 +5,10 @@ using System.Threading.Tasks;
 namespace Hydra
 {
     /// <summary>
-    /// A stream representation of the body of an HTTP request or response
+    /// A read only stream that doesn't own any resources
     /// </summary>
-    public abstract class HttpBodyStream : Stream
+    public abstract class ReadOnlyStream : Stream
     {
-        /// <summary>
-        /// Optional trailing headers
-        /// </summary>
-        public HttpHeaders Headers { get; } = new();
-
         public override bool CanWrite => false;
 
         public override void Flush() => throw new NotSupportedException();

@@ -7,10 +7,8 @@ namespace Hydra
 {
     /// <summary>
     /// A wrapper around a stream that limits the amount of data that can be read from it
-    /// 
-    /// This class is not responsible for disposing of the wrapped stream
     /// </summary>
-    public class HttpSizedBodyStream : HttpBodyStream
+    public class SizedStream : ReadOnlyStream
     {
         private readonly Stream stream;
         private readonly int length;
@@ -23,7 +21,7 @@ namespace Hydra
         /// </summary>
         /// <param name="stream">Stream to wrap</param>
         /// <param name="length">Length to limit to</param>
-        public HttpSizedBodyStream(Stream stream, int length)
+        public SizedStream(Stream stream, int length)
         {
             this.stream = stream;
             this.length = length;

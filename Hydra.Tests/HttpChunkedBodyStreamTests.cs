@@ -7,13 +7,13 @@ namespace Hydra.Tests
     [TestClass]
     public class HttpChunkedBodyStreamTests
     {
-        private readonly MemoryStream stream;
+        private readonly MemoryStream stream = new();
+        private readonly HttpHeaders headers = new();
         private readonly HttpChunkedBodyStream bodyStream;
 
         public HttpChunkedBodyStreamTests()
         {
-            stream = new();
-            bodyStream = new(stream);
+            bodyStream = new(stream, headers);
         }
 
         [TestMethod]
@@ -45,7 +45,7 @@ namespace Hydra.Tests
             stream.Position = 0;
 
             Assert.AreEqual("oh hi mark", bodyStream.AsText());
-            Assert.AreEqual("The Room", bodyStream.Headers["X-Movie"].ToString());
+            Assert.AreEqual("The Room", headers["X-Movie"].ToString());
         }
     }
 }

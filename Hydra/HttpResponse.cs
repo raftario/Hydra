@@ -117,7 +117,7 @@ namespace Hydra
                 }
 
                 if (response.Body is not null) await response.Body.DisposeAsync();
-                response.Body = HttpEmptyBodyStream.Body;
+                response.Body = EmptyStream.Body;
             }
             if (needsClose)
             {
@@ -129,7 +129,7 @@ namespace Hydra
 
             writer.WriteStatusLine(new(response.Status, response.Reason));
             foreach (var (name, values) in response.Headers) writer.WriteHeader(new(name, values));
-            await writer.Send(response.Body ?? HttpEmptyBodyStream.Body, cancellationToken);
+            await writer.Send(response.Body ?? EmptyStream.Body, cancellationToken);
 
             return needsClose;
         }

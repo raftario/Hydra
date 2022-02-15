@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 namespace Hydra
 {
     /// <summary>
-    /// An empty body stream which is always done reading and never returns any data
+    /// An empty stream which is always done reading and never returns any data
     /// </summary>
-    public class HttpEmptyBodyStream : HttpBodyStream
+    public class EmptyStream : ReadOnlyStream
     {
         /// <summary>
-        /// Shared empty body stream
+        /// Shared empty stream
         /// </summary>
-        public static readonly HttpBodyStream Body = new HttpEmptyBodyStream();
-        private HttpEmptyBodyStream() { }
+        public static readonly Stream Body = new EmptyStream();
+        private EmptyStream() { }
 
         public override bool CanRead => true;
         public override bool CanSeek => false;

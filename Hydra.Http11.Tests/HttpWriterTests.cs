@@ -10,12 +10,11 @@ namespace Hydra.Http11.Tests
     [TestClass]
     public class HttpWriterTests
     {
-        private readonly MemoryStream stream;
+        private readonly MemoryStream stream = new();
         private readonly HttpWriter writer;
 
         public HttpWriterTests()
         {
-            stream = new();
             writer = new(PipeWriter.Create(stream));
         }
 

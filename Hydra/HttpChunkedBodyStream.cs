@@ -13,9 +13,11 @@ namespace Hydra
     /// 
     /// This class is not responsible for disposing of the wrapped stream
     /// </summary>
-    public class HttpChunkedBodyStream : HttpBodyStream
+    public class HttpChunkedBodyStream : ReadOnlyStream
     {
         private readonly ChunkedReader reader;
+        private readonly HttpHeaders headers;
+
         /// <summary>
         /// Length of the current chunk
         /// </summary>
@@ -25,17 +27,21 @@ namespace Hydra
         /// </summary>
         private int i = 0;
 
-        internal HttpChunkedBodyStream(PipeReader reader)
+        internal HttpChunkedBodyStream(PipeReader reader, HttpHeaders headers)
         {
             this.reader = new(reader);
+            this.headers = headers;
         }
+
         /// <summary>
         /// Wraps the given stream for decoding
         /// </summary>
         /// <param name="stream">Chunk encoded stream to wrap</param>
-        public HttpChunkedBodyStream(Stream stream)
+        /// <param name="headers">Instance to parse optional trailing headers into</param>
+        public HttpChunkedBodyStream(Stream stream, HttpHeaders headers)
         {
             reader = new(PipeReader.Create(stream));
+            this.headers = headers;
         }
 
         public override bool CanRead => true;
@@ -60,7 +66,7 @@ namespace Hydra
                 // we reached the end, just gotta parse the optional trailing headers
                 if (currentChunkLength == 0)
                 {
-                    await reader.ReadHeaders(Headers, cancellationToken);
+                    await reader.ReadHeaders(headers, cancellationToken);
                     return 0;
                 }
             }

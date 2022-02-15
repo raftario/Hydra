@@ -9,12 +9,11 @@ namespace Hydra.Http11.Tests
     [TestClass]
     public class ChunkedReaderTests
     {
-        private readonly MemoryStream stream;
+        private readonly MemoryStream stream = new();
         private readonly ChunkedReader reader;
 
         public ChunkedReaderTests()
         {
-            stream = new();
             reader = new(PipeReader.Create(stream));
         }
 

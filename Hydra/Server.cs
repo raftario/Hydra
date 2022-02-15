@@ -1,6 +1,5 @@
 ﻿using Hydra.Http11;
 using System;
-using System.Buffers;
 using System.IO;
 using System.IO.Pipelines;
 using System.Net;
@@ -173,11 +172,12 @@ namespace Hydra
                         response = await httpHandler(request);
                         if (response is null) return;
                     }
+                    catch (ConnectionClosedException) { return; }
                     catch (HttpBadRequestException)
                     {
                         httpWriter.WriteStatusLine(new(400, "Bad Request"));
                         httpWriter.WriteHeader(new("Content-Length", "0"));
-                        await httpWriter.Send(HttpEmptyBodyStream.Body, cancellationToken);
+                        await httpWriter.Send(EmptyStream.Body, cancellationToken);
 
                         continue;
                     }
@@ -185,7 +185,7 @@ namespace Hydra
                     {
                         httpWriter.WriteStatusLine(new(415, "URI Too Long"));
                         httpWriter.WriteHeader(new("Content-Length", "0"));
-                        await httpWriter.Send(HttpEmptyBodyStream.Body, cancellationToken);
+                        await httpWriter.Send(EmptyStream.Body, cancellationToken);
 
                         continue;
                     }
@@ -193,7 +193,7 @@ namespace Hydra
                     {
                         httpWriter.WriteStatusLine(new(501, "Not Implemented"));
                         httpWriter.WriteHeader(new("Content-Length", "0"));
-                        await httpWriter.Send(HttpEmptyBodyStream.Body, cancellationToken);
+                        await httpWriter.Send(EmptyStream.Body, cancellationToken);
 
                         continue;
                     }
@@ -202,8 +202,8 @@ namespace Hydra
                     {
                         // returns true if we need to close
                         if (await httpWriter.WriteResponse(response, request, cancellationToken)) return;
-                        // need to make sure the whole body has been read before parsing the next request
-                        await Drain(request.Body, cancellationToken);
+                        // need to make sure the whole request has been read before parsing the next one
+                        await request.Drain();
                     }
                     finally
                     {
@@ -219,22 +219,6 @@ namespace Hydra
             finally
             {
                 await stream.DisposeAsync();
-            }
-        }
-
-        private static async ValueTask Drain(Stream stream, CancellationToken cancellationToken)
-        {
-            var pool = ArrayPool<byte>.Shared;
-            byte[] buffer = pool.Rent(4096);
-            int read = 1;
-
-            try
-            {
-                while (read > 0) read = await stream.ReadAsync(buffer, cancellationToken);
-            }
-            finally
-            {
-                pool.Return(buffer);
             }
         }
 
@@ -260,4 +244,6 @@ namespace Hydra
         public event EventHandler<ExceptionEventArgs>? Exception;
         private void OnException(Exception ex) => Exception?.Invoke(this, new(ex));
     }
+
+    internal class ConnectionClosedException : Exception { }
 }

@@ -10,7 +10,7 @@ After trying alternatives for a project without finding anyting satisfying, a fr
 Unlike ASP, Hydra is very simple and barebones. I like to think it exists at an abstraction level where it's both usable as is and for building frameworks upon.
 However, it doesn't support HTTP/2.0 and is nowhere near as feature packed as ASP.
 
-Unlike most alternatives, Hydra is a fully streaming server. Request and response bodies are streams, and handling can start as soon as the headers are parsed without waiting for the full body.
+Unlike most alternatives, Hydra is a fully streaming server. Request and response bodies are streams, and handling can start as soon as the method and URI parsed without waiting for the full headers and body.
 Under the hood, it uses a streaming parser based on [httparse](https://github.com/seanmonstar/httparse) and is built on top of [System.IO.Pipelines](https://docs.microsoft.com/en-us/dotnet/standard/io/pipelines).
 
 Finally, Hydra is unsurprising. It never tries to be smart and only does the bare minimum required to follow [the spec](https://datatracker.ietf.org/doc/html/rfc7230).
@@ -20,6 +20,7 @@ Finally, Hydra is unsurprising. It never tries to be smart and only does the bar
 - [x] Simple and lightweight
 - [x] Truly cross-platform
 - [x] Streaming request and response bodies
+- [x] Streaming request headers
 - [x] TLS encryption
 - [x] Request pipelining
 - [x] Chunked encoding
@@ -36,12 +37,12 @@ You can take a look at usage examples in the [example project](./Hydra.Example/)
 using Hydra;
 using System.Text;
 
-using var server = await Server.At("localhost", 8080, (req) =>
+using var server = await Server.At("localhost", 8080, async (req) =>
 {
     var hello = "Hello, Hydra!";
     var body = new MemoryStream(Encoding.UTF8.GetBytes(hello));
-    var response = new HttpResponse(200, body);
-    return Task.FromResult(response);
+    var res = new HttpResponse(200, body);
+    return res;
 });
 await server.Run();
 ```
