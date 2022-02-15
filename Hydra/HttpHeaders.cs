@@ -8,11 +8,12 @@ using System.Linq;
 namespace Hydra
 {
     /// <summary>
-    /// A collection of case-insensitive names associated with a list of values
+    /// A collection of case-insensitive headers names associated with one or more header values
     /// </summary>
     public class HttpHeaders : IDictionary<string, StringValues>
     {
         private readonly Dictionary<string, StringValues> dictionary = new(StringComparer.OrdinalIgnoreCase);
+
         private ICollection<KeyValuePair<string, StringValues>> Collection => dictionary;
 
         public StringValues this[string name] { get => dictionary[name]; set => dictionary[name] = value; }

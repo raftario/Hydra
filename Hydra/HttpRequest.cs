@@ -56,7 +56,7 @@ namespace Hydra
         /// <summary>
         /// Request headers
         /// </summary>
-        public HttpHeaders Headers { get; } = new();
+        public ReadOnlyHttpHeaders Headers { get; } = new();
         /// <summary>
         /// Request body
         /// </summary>
@@ -119,7 +119,7 @@ namespace Hydra
         public async ValueTask ReadHeaders()
         {
             if (body != null) return;
-            if (!await reader.ReadHeaders(Headers, CancellationToken)) throw new ConnectionClosedException();
+            if (!await reader.ReadHeaders(Headers.inner, CancellationToken)) throw new ConnectionClosedException();
             Validate();
         }
 
@@ -149,7 +149,7 @@ namespace Hydra
                 // if we have transfer encodings the outermost one must be chunk or the body isn't readable
                 if (Encoding.TryPeek(out string? e) && e.Equals("chunked", StringComparison.OrdinalIgnoreCase))
                 {
-                    body = new HttpChunkedBodyStream(reader.Reader, Headers);
+                    body = new HttpChunkedBodyStream(reader.Reader, Headers.inner);
                     Encoding.Pop();
                 }
                 else throw new UnknownBodyLengthException();
