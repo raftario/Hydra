@@ -5,6 +5,7 @@ using System.IO.Pipelines;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
@@ -141,6 +142,7 @@ namespace Hydra
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         private async Task HttpClient(Socket client, CancellationToken cancellationToken)
         {
             Stream stream = new NetworkStream(client, true);
@@ -175,27 +177,21 @@ namespace Hydra
                     catch (ConnectionClosedException) { return; }
                     catch (HttpBadRequestException)
                     {
-                        httpWriter.WriteStatusLine(new(400, "Bad Request"));
-                        httpWriter.WriteHeader(new("Content-Length", "0"));
+                        HttpWriteErrorResponse(httpWriter, 400, "Bad Request");
                         await httpWriter.Send(EmptyStream.Body, cancellationToken);
-
-                        continue;
+                        return;
                     }
                     catch (HttpUriTooLongException)
                     {
-                        httpWriter.WriteStatusLine(new(415, "URI Too Long"));
-                        httpWriter.WriteHeader(new("Content-Length", "0"));
+                        HttpWriteErrorResponse(httpWriter, 415, "URI Too Long");
                         await httpWriter.Send(EmptyStream.Body, cancellationToken);
-
-                        continue;
+                        return;
                     }
                     catch (HttpNotImplementedException)
                     {
-                        httpWriter.WriteStatusLine(new(501, "Not Implemented"));
-                        httpWriter.WriteHeader(new("Content-Length", "0"));
+                        HttpWriteErrorResponse(httpWriter, 501, "Not Implemented");
                         await httpWriter.Send(EmptyStream.Body, cancellationToken);
-
-                        continue;
+                        return;
                     }
 
                     try
@@ -205,6 +201,8 @@ namespace Hydra
                         // need to make sure the whole request has been read before parsing the next one
                         await request.Drain();
                     }
+                    catch (ConnectionClosedException) { return; }
+                    catch (HttpBadRequestException) { return; }
                     finally
                     {
                         if (response.Body is not null) await response.Body.DisposeAsync();
@@ -220,6 +218,14 @@ namespace Hydra
             {
                 await stream.DisposeAsync();
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void HttpWriteErrorResponse(HttpWriter httpWriter, int status, string reason)
+        {
+            httpWriter.WriteStatusLine(new(status, reason));
+            httpWriter.WriteHeader(new("Content-Length", "0"));
+            httpWriter.WriteHeader(new("Connection", "close"));
         }
 
         public void Dispose()
