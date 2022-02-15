@@ -9,6 +9,14 @@ using System.Threading.Tasks;
 namespace Hydra.Http11
 {
     /// <summary>
+    /// An HTTP request start line
+    /// </summary>
+    /// <param name="Method">HTTP request method</param>
+    /// <param name="Uri">HTTP request URI</param>
+    /// <param name="Version">HTTP request protocol minor version</param>
+    public readonly record struct StartLine(string Method, string Uri, HttpVersion Version);
+
+    /// <summary>
     /// A reader for HTTP/1.1 requests
     /// </summary>
     public class HttpReader : AbstractReader
@@ -16,7 +24,7 @@ namespace Hydra.Http11
         /// <summary>
         /// Maximum length to process in attempt to parse the start line before bailing
         /// </summary>
-        public int MaxStartLineLength = 8192;
+        public int MaxStartLineLength = 8 * 1024;
         public Stream Body => Reader.AsStream();
 
         public HttpReader(PipeReader reader) : base(reader) { }
@@ -36,17 +44,13 @@ namespace Hydra.Http11
                 var result = await Reader.ReadAsync(cancellationToken);
                 var buffer = result.Buffer;
                 var bytes = buffer.Bytes();
-
                 var consumed = buffer.Start;
-                var examined = buffer.End;
 
                 try
                 {
-                    if (ParseStartLine(ref bytes, out string? method, out string? uri, out int version))
+                    if (ParseStartLine(ref bytes, out string? method, out string? uri, out HttpVersion version))
                     {
                         consumed = bytes.Position;
-                        examined = consumed;
-
                         return new(ParseStatus.Complete, new(method, uri, version));
                     }
 
@@ -55,7 +59,7 @@ namespace Hydra.Http11
                 }
                 finally
                 {
-                    Reader.AdvanceTo(consumed, examined);
+                    Reader.AdvanceTo(consumed, bytes.Position);
                 }
             }
         }
@@ -67,8 +71,12 @@ namespace Hydra.Http11
         /// <param name="uri">URI</param>
         /// <param name="version">Minor version</param>
         /// <returns>false if the data is incomplete</returns>
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        internal static bool ParseStartLine(ref Bytes bytes, [NotNullWhen(true)] out string? method, [NotNullWhen(true)] out string? uri, out int version)
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        internal static bool ParseStartLine(
+            ref Bytes bytes,
+            [NotNullWhen(true)] out string?
+            method, [NotNullWhen(true)] out string? uri,
+            out HttpVersion version)
         {
             method = null;
             uri = null;
@@ -87,7 +95,7 @@ namespace Hydra.Http11
         /// </summary>
         /// <param name="token">Token</param>
         /// <returns>false if the data is incomplete</returns>
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         internal static bool ParseToken(ref Bytes bytes, [NotNullWhen(true)] out string? token)
         {
             while (bytes.Next(out byte b))
@@ -109,7 +117,7 @@ namespace Hydra.Http11
         /// </summary>
         /// <param name="uri">URI</param>
         /// <returns>false if the data is incomplete</returns>
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         internal static bool ParseUri(ref Bytes bytes, [NotNullWhen(true)] out string? uri)
         {
             while (bytes.Next(out byte b))
@@ -131,8 +139,8 @@ namespace Hydra.Http11
         /// </summary>
         /// <param name="version">Minor version</param>
         /// <returns>false if the data is incomplete</returns>
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        internal static bool ParseVersion(ref Bytes bytes, out int version)
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        internal static bool ParseVersion(ref Bytes bytes, out HttpVersion version)
         {
             version = default;
             byte b;
@@ -146,8 +154,8 @@ namespace Hydra.Http11
             if (!bytes.Next(out b)) return false; if (b != '.') throw new UnsupportedVersionException();
 
             if (!bytes.Next(out b)) return false;
-            if (b == '0') version = 0;
-            else if (b == '1') version = 1;
+            if (b == '0') version = HttpVersion.Http10;
+            else if (b == '1') version = HttpVersion.Http11;
             else throw new UnsupportedVersionException();
 
             return true;

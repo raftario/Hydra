@@ -20,12 +20,12 @@ namespace Hydra.Http11.Tests
         }
 
         [TestMethod]
-        [DataRow("POST /api/songs/1?locale=en HTTP/1.1\r\n", "POST", "/api/songs/1?locale=en", 1)]
-        [DataRow("POST /api/songs/1?locale=en HTTP/1.0\r\n", "POST", "/api/songs/1?locale=en", 0)]
-        [DataRow("POST /api/songs/1?locale=en HTTP/1.1\n", "POST", "/api/songs/1?locale=en", 1)]
-        [DataRow("\r\nPOST /api/songs/1?locale=en HTTP/1.1\r\n", "POST", "/api/songs/1?locale=en", 1)]
-        [DataRow("\nPOST /api/songs/1?locale=en HTTP/1.1\r\n", "POST", "/api/songs/1?locale=en", 1)]
-        public async Task ReadStartLine_Complete(string startLine, string expectedMethod, string expectedUri, int expectedVersion)
+        [DataRow("POST /api/songs/1?locale=en HTTP/1.1\r\n", "POST", "/api/songs/1?locale=en", HttpVersion.Http11)]
+        [DataRow("POST /api/songs/1?locale=en HTTP/1.0\r\n", "POST", "/api/songs/1?locale=en", HttpVersion.Http10)]
+        [DataRow("POST /api/songs/1?locale=en HTTP/1.1\n", "POST", "/api/songs/1?locale=en", HttpVersion.Http11)]
+        [DataRow("\r\nPOST /api/songs/1?locale=en HTTP/1.1\r\n", "POST", "/api/songs/1?locale=en", HttpVersion.Http11)]
+        [DataRow("\nPOST /api/songs/1?locale=en HTTP/1.1\r\n", "POST", "/api/songs/1?locale=en", HttpVersion.Http11)]
+        public async Task ReadStartLine_Complete(string startLine, string expectedMethod, string expectedUri, HttpVersion expectedVersion)
         {
             stream.Write(startLine.AsBytes());
             stream.Position = 0;
@@ -201,7 +201,7 @@ namespace Hydra.Http11.Tests
 
             Assert.AreEqual("POST", reader.startLine!.Value.Method);
             Assert.AreEqual("/api/songs/1?locale=en", reader.startLine!.Value.Uri);
-            Assert.AreEqual(1, reader.startLine!.Value.Version);
+            Assert.AreEqual(HttpVersion.Http11, reader.startLine!.Value.Version);
 
             Assert.AreEqual("application/json; charset=utf-8", reader.headers["Content-Type"]);
             Assert.AreEqual($"{body.Length}", reader.headers["Content-Length"]);

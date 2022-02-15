@@ -74,7 +74,7 @@ namespace Hydra
             // read a less or equal amount of bytes than what's left in the current chunk
 
             var result = await reader.Reader.ReadAsync(cancellationToken);
-            int length = (int) Math.Min(Math.Min(currentChunkLength - i, buffer.Length), result.Buffer.Length);
+            int length = Math.Min(Math.Min(currentChunkLength - i, buffer.Length), (int) result.Buffer.Length);
 
             result.Buffer.Slice(0, length).CopyTo(buffer.Span[..length]);
             reader.Reader.AdvanceTo(result.Buffer.GetPosition(length));

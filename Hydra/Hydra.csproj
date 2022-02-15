@@ -23,10 +23,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Hydra.Http11\Hydra.Http11.csproj" />
+    <ProjectReference Include="..\Hydra.WebSocket\Hydra.WebSocket.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../README.md" Pack="true" PackagePath="/"/>
+    <None Include="../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
 </Project>

@@ -85,7 +85,7 @@ namespace Hydra.Core
         /// </summary>
         /// <param name="next">Next byte, if there is data left</param>
         /// <returns>true if there is data left, false otherwise</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Next(out byte next)
         {
             bool peeked = Peek(out next);
@@ -96,14 +96,14 @@ namespace Hydra.Core
         /// <summary>
         /// Returns the data that has not yet been read
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySequence<byte> Rest() => sequence.Slice(Position);
         /// <summary>
         /// Returns the data that has been read but not consumed and advances the consume cursor
         /// </summary>
         /// <param name="offset">Offset from the read cursor the returned data should end at</param>
         /// <param name="consumeOffset">Offset from the read cursor to advance the consume cursor to</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySequence<byte> Read(int offset = 0, int consumeOffset = 0)
         {
             var read = sequence.Slice(consumedPosition, sequence.GetPosition(index + offset, currentPosition));
@@ -114,7 +114,7 @@ namespace Hydra.Core
         /// Advances the consume cursor to the position of the read cursor
         /// </summary>
         /// <param name="offset">Offset from the read cursor to advance to</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Consume(int offset = 0)
         {
             consumedPosition = sequence.GetPosition(index + offset, currentPosition);

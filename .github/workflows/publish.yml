@@ -38,6 +38,11 @@ jobs:
           delete-only-pre-release-versions: "true"
       - uses: actions/delete-package-versions@v2
         with: 
+          package-name: HydraServer.WebSocket
+          min-versions-to-keep: 8
+          delete-only-pre-release-versions: "true"
+      - uses: actions/delete-package-versions@v2
+        with: 
           package-name: HydraServer.Core
           min-versions-to-keep: 8
           delete-only-pre-release-versions: "true"

@@ -13,21 +13,6 @@ using System.Threading.Tasks;
 namespace Hydra
 {
     /// <summary>
-    /// An HTTP protocol version
-    /// </summary>
-    public enum HttpVersion
-    {
-        /// <summary>
-        /// HTTP/1.0
-        /// </summary>
-        Http10,
-        /// <summary>
-        /// HTTP/1.1
-        /// </summary>
-        Http11,
-    }
-
-    /// <summary>
     /// An HTTP request
     /// </summary>
     public class HttpRequest
@@ -52,7 +37,7 @@ namespace Hydra
         /// <summary>
         /// Request protocol version
         /// </summary>
-        public HttpVersion Version { get; }
+        public Http11.HttpVersion Version { get; }
         /// <summary>
         /// Request headers
         /// </summary>
@@ -93,19 +78,14 @@ namespace Hydra
         internal HttpRequest(
             string method,
             string uri,
-            int version,
+            Http11.HttpVersion version,
             Socket socket,
             HttpReader reader,
             CancellationToken cancellationToken)
         {
             Method = method;
             Uri = uri;
-            Version = version switch
-            {
-                0 => HttpVersion.Http10,
-                1 => HttpVersion.Http11,
-                _ => throw new NotSupportedException(),
-            };
+            Version = version;
             CancellationToken = cancellationToken;
 
             this.socket = socket;
@@ -130,7 +110,7 @@ namespace Hydra
         private void Validate()
         {
             // HTTP/1.1 requests must contain a Host header
-            if (Version == HttpVersion.Http10 && (!Headers.TryGetValue("Host", out var host) || host.Count > 1)) throw new InvalidHostException();
+            if (Version == Http11.HttpVersion.Http10 && (!Headers.TryGetValue("Host", out var host) || host.Count > 1)) throw new InvalidHostException();
 
             // requests containing both Transfer-Encoding and Content-Length headers are invalid and should be rejected
             if (Headers.ContainsKey("Transfer-Encoding") && Headers.ContainsKey("Content-Length")) throw new TransferEncodingAndContentLengthException();
@@ -186,7 +166,7 @@ namespace Hydra
             await ReadHeaders();
 
             var pool = ArrayPool<byte>.Shared;
-            byte[] buffer = pool.Rent(4096);
+            byte[] buffer = pool.Rent(4 * 1024);
             int read = 1;
 
             try
@@ -204,29 +184,6 @@ namespace Hydra
         /// before the headers have been read
         /// </summary>
         public class HeadersNotReadException : Exception { }
-
-        /// <summary>
-        /// An exception thrown by the server if a request has both
-        /// Transfer-Encoding and Content-Length headers
-        /// 
-        /// The spec recommends rejecting such requests because they have a
-        /// high chance of being spoofed.
-        /// </summary>
-        public class TransferEncodingAndContentLengthException : HttpBadRequestException { }
-        /// <summary>
-        /// An exception thrown by the server if a request has an invalid
-        /// Content-Length header
-        /// </summary>
-        public class InvalidContentLengthException : HttpBadRequestException { }
-        /// <summary>
-        /// An exception thrown by the server if a request has an invalid
-        /// or missing Host header
-        /// </summary>
-        public class InvalidHostException : HttpBadRequestException { }
-        /// <summary>
-        /// An exception thrown by the server if it can't determine the length of a request body.
-        /// </summary>
-        public class UnknownBodyLengthException : HttpBadRequestException { }
     }
 
     public static class ReaderExtensions

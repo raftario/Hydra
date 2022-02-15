@@ -7,6 +7,13 @@ using System.Threading.Tasks;
 namespace Hydra.Http11
 {
     /// <summary>
+    /// An HTTP header
+    /// </summary>
+    /// <param name="Name">Header name</param>
+    /// <param name="Value">Header value</param>
+    public readonly record struct Header(string Name, string Value);
+
+    /// <summary>
     /// An abstract reader containing fields and methods shared across specific formats
     /// </summary>
     public abstract class AbstractReader
@@ -14,7 +21,7 @@ namespace Hydra.Http11
         /// <summary>
         /// Maximum length to process in attempt to parse a single header before bailing
         /// </summary>
-        public int MaxHeaderLength = 8192;
+        public int MaxHeaderLength = 8 * 1024;
 
         public readonly PipeReader Reader;
 
@@ -39,18 +46,12 @@ namespace Hydra.Http11
                 var result = await Reader.ReadAsync(cancellationToken);
                 var buffer = result.Buffer;
                 var bytes = buffer.Bytes();
-
                 var consumed = buffer.Start;
-                var examined = buffer.End;
 
                 try
                 {
                     var status = ParseHeader(ref bytes, out string? name, out string? value);
-                    if (status != ParseStatus.Incomplete)
-                    {
-                        consumed = bytes.Position;
-                        examined = consumed;
-                    }
+                    if (status != ParseStatus.Incomplete) consumed = bytes.Position;
 
                     if (status == ParseStatus.Complete) return new(ParseStatus.Complete, new(name!, value!));
                     if (status == ParseStatus.Finished) return new(ParseStatus.Finished);
@@ -60,7 +61,7 @@ namespace Hydra.Http11
                 }
                 finally
                 {
-                    Reader.AdvanceTo(consumed, examined);
+                    Reader.AdvanceTo(consumed, bytes.Position);
                 }
             }
         }
@@ -69,7 +70,7 @@ namespace Hydra.Http11
         /// Skips empty lines
         /// </summary>
         /// <returns>false if the data is incomplete</returns>
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         protected static bool SkipEmptyLines(ref Bytes bytes)
         {
             while (bytes.Peek(out byte b))
@@ -94,7 +95,7 @@ namespace Hydra.Http11
         /// <param name="name">Header name</param>
         /// <param name="value">Header value</param>
         /// <returns>false if the data is incomplete</returns>
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         protected static ParseStatus ParseHeader(ref Bytes bytes, out string? name, out string? value)
         {
             name = null;
@@ -153,8 +154,8 @@ namespace Hydra.Http11
         /// Consumes a single newline
         /// </summary>
         /// <returns>false if the data is incomplete</returns>
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        internal static bool ConsumeNewline(ref Bytes bytes)
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        protected static bool ConsumeNewline(ref Bytes bytes)
         {
             if (!bytes.Next(out byte b)) return false;
             if (b == '\r')

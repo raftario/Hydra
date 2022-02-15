@@ -20,6 +20,7 @@ namespace Hydra.Http11
         /// </summary>
         Finished,
     }
+
     /// <summary>
     /// A parsing operation result
     /// </summary>
@@ -47,24 +48,4 @@ namespace Hydra.Http11
         /// </summary>
         public bool Finished => Status == ParseStatus.Finished;
     }
-
-    /// <summary>
-    /// An HTTP request start line
-    /// </summary>
-    /// <param name="Method">HTTP request method</param>
-    /// <param name="Uri">HTTP request URI</param>
-    /// <param name="Version">HTTP request protocol minor version</param>
-    public readonly record struct StartLine(string Method, string Uri, int Version);
-    /// <summary>
-    /// An HTTP response status line
-    /// </summary>
-    /// <param name="Status">HTTP response status</param>
-    /// <param name="Reason">Reason phrase</param>
-    public readonly record struct StatusLine(int Status, string Reason);
-    /// <summary>
-    /// An HTTP header
-    /// </summary>
-    /// <param name="Name">Header name</param>
-    /// <param name="Value">Header value</param>
-    public readonly record struct Header(string Name, string Value);
 }

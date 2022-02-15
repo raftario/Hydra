@@ -15,7 +15,7 @@ namespace Hydra.Http11
         /// <summary>
         /// Maximum length to process in attempt to parse a chunk length before bailing
         /// </summary>
-        public int MaxChunkSizeLength = 2048;
+        public int MaxChunkSizeLength = 1024;
 
         public ChunkedReader(PipeReader reader) : base(reader) { }
 
@@ -35,17 +35,13 @@ namespace Hydra.Http11
                 var result = await Reader.ReadAsync(cancellationToken);
                 var buffer = result.Buffer;
                 var bytes = buffer.Bytes();
-
                 var consumed = buffer.Start;
-                var examined = buffer.End;
 
                 try
                 {
                     if (ParseChunkSize(ref bytes, prefixNewline, out int length))
                     {
                         consumed = bytes.Position;
-                        examined = consumed;
-
                         return new(ParseStatus.Complete, length);
                     }
 
@@ -54,7 +50,7 @@ namespace Hydra.Http11
                 }
                 finally
                 {
-                    Reader.AdvanceTo(consumed, examined);
+                    Reader.AdvanceTo(consumed, bytes.Position);
                 }
             }
         }
@@ -65,7 +61,7 @@ namespace Hydra.Http11
         /// <param name="prefixNewline">Whether to consume a prefixed newline before reading the length</param>
         /// <param name="length">Chunk length</param>
         /// <returns>false if the data is incomplete</returns>
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         internal static bool ParseChunkSize(ref Bytes bytes, bool prefixNewline, out int length)
         {
             length = default;

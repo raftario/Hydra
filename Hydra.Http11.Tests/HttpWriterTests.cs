@@ -22,9 +22,9 @@ namespace Hydra.Http11.Tests
         public async Task Write()
         {
             string body = "{ \"name\": \"Hydra\" }";
-            writer.WriteStatusLine(new(200, "OK"));
-            writer.WriteHeader(new("Content-Type", "application/json; charset=utf-8"));
-            writer.WriteHeader(new("Content-Length", body.Length.ToString()));
+            writer.WriteStatusLine(200, "OK");
+            writer.WriteHeader("Content-Type", "application/json; charset=utf-8");
+            writer.WriteHeader("Content-Length", body.Length.ToString());
             await writer.Send(body.AsStream());
 
             string expected =

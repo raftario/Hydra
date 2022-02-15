@@ -30,6 +30,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Actions", "Actions", "{C533
 		.github\workflows\publish.yml = .github\workflows\publish.yml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hydra.WebSocket", "Hydra.WebSocket\Hydra.WebSocket.csproj", "{57E2DFCD-702E-4C5E-A179-04D25E343262}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -64,6 +66,10 @@ Global
 		{54E743B5-F4CF-4FEC-962B-EB45396ED082}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{54E743B5-F4CF-4FEC-962B-EB45396ED082}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{54E743B5-F4CF-4FEC-962B-EB45396ED082}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57E2DFCD-702E-4C5E-A179-04D25E343262}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57E2DFCD-702E-4C5E-A179-04D25E343262}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57E2DFCD-702E-4C5E-A179-04D25E343262}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57E2DFCD-702E-4C5E-A179-04D25E343262}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

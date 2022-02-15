@@ -223,9 +223,9 @@ namespace Hydra
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void HttpWriteErrorResponse(HttpWriter httpWriter, int status, string reason)
         {
-            httpWriter.WriteStatusLine(new(status, reason));
-            httpWriter.WriteHeader(new("Content-Length", "0"));
-            httpWriter.WriteHeader(new("Connection", "close"));
+            httpWriter.WriteStatusLine(status, reason);
+            httpWriter.WriteHeader("Content-Length", "0");
+            httpWriter.WriteHeader("Connection", "close");
         }
 
         public void Dispose()

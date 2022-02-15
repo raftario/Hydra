@@ -127,8 +127,8 @@ namespace Hydra
                 response.Headers["Connection"] = "close";
             }
 
-            writer.WriteStatusLine(new(response.Status, response.Reason));
-            foreach (var (name, values) in response.Headers) writer.WriteHeader(new(name, values));
+            writer.WriteStatusLine(response.Status, response.Reason);
+            foreach (var (name, values) in response.Headers) writer.WriteHeader(name, values);
             await writer.Send(response.Body ?? EmptyStream.Body, cancellationToken);
 
             return needsClose;

@@ -22,16 +22,16 @@ namespace Hydra.Http11
         /// Writes the given status line
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public void WriteStatusLine(StatusLine statusLine)
+        public void WriteStatusLine(int status, string reason)
         {
-            string statusString = statusLine.Status.ToString();
+            string statusString = status.ToString();
 
             int versionIdx = 0;
             int firstSpaceIdx = versionIdx + version.Length;
             int statusIdx = firstSpaceIdx + 1;
             int secondSpaceIdx = statusIdx + statusString.Length;
             int reasonIdx = secondSpaceIdx + 1;
-            int crIdx = reasonIdx + statusLine.Reason.Length;
+            int crIdx = reasonIdx + reason.Length;
             int lfIdx = crIdx + 1;
 
             int length = lfIdx + 1;
@@ -41,7 +41,7 @@ namespace Hydra.Http11
             memory[firstSpaceIdx] = (byte)' ';
             Encoding.ASCII.GetBytes(statusString, memory[statusIdx..]);
             memory[secondSpaceIdx] = (byte)' ';
-            Encoding.ASCII.GetBytes(statusLine.Reason, memory[reasonIdx..]);
+            Encoding.ASCII.GetBytes(reason, memory[reasonIdx..]);
             memory[crIdx] = (byte)'\r';
             memory[lfIdx] = (byte)'\n';
 
@@ -52,22 +52,22 @@ namespace Hydra.Http11
         /// Writes a single given header
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public void WriteHeader(Header header)
+        public void WriteHeader(string name, string value)
         {
             int nameIdx = 0;
-            int colonIdx = nameIdx + header.Name.Length;
+            int colonIdx = nameIdx + name.Length;
             int spaceIdx = colonIdx + 1;
             int valueIdx = spaceIdx + 1;
-            int crIdx = valueIdx + header.Value.Length;
+            int crIdx = valueIdx + value.Length;
             int lfIdx = crIdx + 1;
 
             int length = lfIdx + 1;
             var memory = Writer.GetSpan(length);
 
-            Encoding.ASCII.GetBytes(header.Name, memory[nameIdx..]);
+            Encoding.ASCII.GetBytes(name, memory[nameIdx..]);
             memory[colonIdx] = (byte)':';
             memory[spaceIdx] = (byte)' ';
-            Encoding.ASCII.GetBytes(header.Value, memory[valueIdx..]);
+            Encoding.ASCII.GetBytes(value, memory[valueIdx..]);
             memory[crIdx] = (byte)'\r';
             memory[lfIdx] = (byte)'\n';
 
