@@ -23,6 +23,7 @@ namespace Hydra
         /// <param name="request">The received HTTP request</param>
         /// <returns>The HTTP response to send back</returns>
         public delegate Task<HttpResponse> HttpHandler(HttpRequest request);
+        public delegate Task WebSocketHandler(WebSocket socket);
 
         /// <summary>
         /// Listener used to accept clients

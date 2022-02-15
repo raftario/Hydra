@@ -9,6 +9,7 @@ namespace Hydra
     /// </summary>
     public abstract class ReadOnlyStream : Stream
     {
+        public override bool CanSeek => false;
         public override bool CanWrite => false;
 
         public override void Flush() => throw new NotSupportedException();

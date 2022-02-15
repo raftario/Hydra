@@ -45,10 +45,8 @@ namespace Hydra
         }
 
         public override bool CanRead => true;
-        public override bool CanSeek => false;
 
         public override long Length => throw new NotSupportedException();
-
         public override long Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
@@ -84,7 +82,8 @@ namespace Hydra
         }
 
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
-            ReadAsync(new Memory<byte>(buffer, offset, count), cancellationToken).AsTask();
-        public override int Read(byte[] buffer, int offset, int count) => ReadAsync(buffer, offset, count).Result;
+            ReadAsync(new(buffer, offset, count), cancellationToken).AsTask();
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override int Read(Span<byte> buffer) => throw new NotSupportedException();
     }
 }

@@ -1,6 +1,6 @@
-﻿namespace Hydra.WebSocket
+﻿namespace Hydra.WebSocket13
 {
-    public enum WebsocketOpcode : byte
+    public enum WebSocketOpcode : byte
     {
         Continuation = 0x0,
         Test = 0x1,

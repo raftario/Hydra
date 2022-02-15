@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Hydra.WebSocket
+namespace Hydra.WebSocket13
 {
     public class WebSocketWriter
     {
@@ -21,12 +21,12 @@ namespace Hydra.WebSocket
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ValueTask Write(WebsocketOpcode opcode, Stream data, long? length = null, CancellationToken cancellationToken = default) => length is not null
+        public ValueTask Write(WebSocketOpcode opcode, Stream data, long? length = null, CancellationToken cancellationToken = default) => length is not null
             ? WriteSized(opcode, data, length.Value, cancellationToken)
             : WriteUnsized(opcode, data, cancellationToken);
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private async ValueTask WriteSized(WebsocketOpcode opcode, Stream data, long length, CancellationToken cancellationToken)
+        private async ValueTask WriteSized(WebSocketOpcode opcode, Stream data, long length, CancellationToken cancellationToken)
         {
             int frameInfoLength = FrameInfoLength(length);
             var memory = Writer.GetMemory(frameInfoLength)[..frameInfoLength];
@@ -39,7 +39,7 @@ namespace Hydra.WebSocket
         }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private async ValueTask WriteUnsized(WebsocketOpcode opcode, Stream data, CancellationToken cancellationToken)
+        private async ValueTask WriteUnsized(WebSocketOpcode opcode, Stream data, CancellationToken cancellationToken)
         {
             while (true)
             {
@@ -65,12 +65,12 @@ namespace Hydra.WebSocket
 
                 Writer.Advance(frameInfoLength + read);
                 await Writer.FlushAsync(cancellationToken);
-                if (opcode != WebsocketOpcode.Continuation) opcode = WebsocketOpcode.Continuation;
+                if (opcode != WebSocketOpcode.Continuation) opcode = WebSocketOpcode.Continuation;
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        private static void WriteFrameInfo(bool fin, WebsocketOpcode opcode, long length, Span<byte> location)
+        private static void WriteFrameInfo(bool fin, WebSocketOpcode opcode, long length, Span<byte> location)
         {
             location[0] = (byte)(fin ? finBit | (byte)opcode : (byte)opcode);
 

@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Hydra.Http11\Hydra.Http11.csproj" />
-    <ProjectReference Include="..\Hydra.WebSocket\Hydra.WebSocket.csproj" />
+    <ProjectReference Include="..\Hydra.WebSocket13\Hydra.WebSocket13.csproj" />
   </ItemGroup>
 
   <ItemGroup>

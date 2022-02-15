@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Hydra.WebSocket
+namespace Hydra.WebSocket13
 {
     public abstract class WebSocketInvalidFrameException : Exception { }
 

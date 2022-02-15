@@ -5,9 +5,9 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Hydra.WebSocket
+namespace Hydra.WebSocket13
 {
-    public readonly record struct FrameInfo(bool Fin, WebsocketOpcode opcode, bool mask, long length, byte[] maskingKey);
+    public readonly record struct FrameInfo(bool Fin, WebSocketOpcode opcode, bool mask, long length, byte[] maskingKey);
 
     /// <summary>
     /// An reader for websocket messages
@@ -31,7 +31,7 @@ namespace Hydra.WebSocket
         public async ValueTask<FrameInfo?> ReadFrameInfo(CancellationToken cancellationToken = default)
         {
             bool fin;
-            WebsocketOpcode opcode;
+            WebSocketOpcode opcode;
             bool mask;
             long length;
             byte[] maskingKey;
@@ -48,7 +48,7 @@ namespace Hydra.WebSocket
 
                 fin = (finRsvOpcode & finMask) != 0;
                 if ((finRsvOpcode & rsvMask) != 0) throw new NonZeroRsvException();
-                opcode = (WebsocketOpcode)(finRsvOpcode & opcodeMask);
+                opcode = (WebSocketOpcode)(finRsvOpcode & opcodeMask);
                 if (!Enum.IsDefined(opcode)) throw new InvalidOpcodeException();
 
                 if (!bytes.Next(out byte maskLength)) return null;

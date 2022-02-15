@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 
-namespace Hydra.WebSocket
+namespace Hydra.WebSocket13
 {
     public struct WebSocketMasker
     {

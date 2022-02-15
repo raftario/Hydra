@@ -28,20 +28,10 @@ namespace Hydra
         }
 
         public override bool CanRead => stream.CanRead;
-        public override bool CanSeek => false;
 
         public override long Length => length;
         public override long Position { get => n; set => throw new NotSupportedException(); }
 
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            count = Count(count);
-            if (count == 0) return 0;
-
-            int read = stream.Read(buffer, offset, count);
-            n += read;
-            return read;
-        }
         public override int Read(Span<byte> buffer)
         {
             int length = Count(buffer.Length);
@@ -51,15 +41,9 @@ namespace Hydra
             n += read;
             return read;
         }
-        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default)
-        {
-            count = Count(count);
-            if (count == 0) return 0;
+        public override int Read(byte[] buffer, int offset, int count) =>
+            Read(buffer.AsSpan()[offset..(offset + count)]);
 
-            int read = await stream.ReadAsync(buffer, offset, count, cancellationToken);
-            n += read;
-            return read;
-        }
         public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
         {
             int length = Count(buffer.Length);
@@ -69,5 +53,7 @@ namespace Hydra
             n += read;
             return read;
         }
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default) =>
+            ReadAsync(buffer.AsMemory()[offset..(offset + count)], cancellationToken).AsTask();
     }
 }
