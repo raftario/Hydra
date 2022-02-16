@@ -35,7 +35,7 @@ namespace Hydra
         public bool Readable => state is openState;
         public bool Writeable => state is openState;
 
-        public WebSocketCloseMessage CloseMessage => Closed ? closeMessage : throw new InvalidOperationException();
+        public WebSocketCloseMessage CloseMessage => Closed ? closeMessage : throw new InvalidOperationException("Can't access close message before connection is closed");
         public CancellationToken CancellationToken { get; }
 
         internal WebSocket(PipeReader reader, PipeWriter writer, CancellationToken cancellationToken)
@@ -134,7 +134,7 @@ namespace Hydra
 
                     if (!await currentStream.ReadAllAsync(bodyBuffer, cancellationToken)) return null;
 
-                    await HandleClose(frameInfo.Value, bodyBuffer, true, cancellationToken);
+                    await HandleClose(bodyBuffer, true, cancellationToken);
                     return null;
                 }
                 else if (frameInfo.Value.Opcode == WebSocketOpcode.Text) return new WebSocketTextMessage(currentStream);
@@ -170,29 +170,31 @@ namespace Hydra
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken);
             cancellationToken = cts.Token;
 
-            int bodyLength = message.Code is not null ? message.Reason is not null ? message.Reason.Length + 2 : 2 : 0;
-
+            try
             {
-                using var _wlock = await writerLock.LockAsync(cancellationToken);
-                using var buffer = ArrayPool<byte>.Shared.RentDisposable(bodyLength);
-
-                if (message.Code is not null)
+                using (var _wlock = await writerLock.LockAsync(cancellationToken))
                 {
-                    buffer[0] = (byte)((message.Code.Value & 0xFF00) >> 8);
-                    buffer[1] = (byte)(message.Code.Value & 0x00FF);
-
-                    if (message.Reason is not null) Encoding.UTF8.GetBytes(message.Reason, buffer[2..].Span);
+                    await writer.WriteCloseMessage(message.Code, message.Reason, cancellationToken);
                 }
 
-                await writer.WriteSizedMessage(WebSocketOpcode.Close, new MemoryStream(buffer), bodyLength, cancellationToken);
-            }
+                using var _rlock = await readerLock.LockAsync(cancellationToken);
+                while (true)
+                {
+                    var frameInfo = await StartReceive(cancellationToken);
+                    if (frameInfo is null) return;
+                    if (frameInfo.Value.Opcode != WebSocketOpcode.Close) continue;
 
-            using var _rlock = await readerLock.LockAsync(cancellationToken);
-            while (true)
-            {
-                var frameInfo = await StartReceive(cancellationToken);
-                if (frameInfo.Value.Opcode == WebSocketOpcode.Close || frameInfo is null) return;
-            }
+                    int length = (int)frameInfo.Value.Length;
+
+                    using var buffer = ArrayPool<byte>.Shared.RentDisposable(length);
+                    var bodyBuffer = buffer[..length];
+
+                    if (!await currentStream.ReadAllAsync(bodyBuffer, cancellationToken)) return;
+                    WebSocketReader.ParseCloseBody(bodyBuffer.Span, out ushort? code, out string? reason);
+
+                    closeMessage = new(code, reason);
+                }
+            } finally { state = closedState; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -227,26 +229,17 @@ namespace Hydra
             return frameInfo;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool StartClose() => Interlocked.CompareExchange(ref state, closingState, openState) == openState;
-
-        private async ValueTask HandleClose(FrameInfo frame, Memory<byte> body, bool lockk, CancellationToken cancellationToken)
+        private async ValueTask HandleClose(Memory<byte> body, bool lockk, CancellationToken cancellationToken)
         {
             if (!StartClose()) return;
 
-            ushort code = 1000;
-            string? reason = null;
-
-            if (body.Length >= 2) code = (ushort)((body.Span[0] << 8) | body.Span[1]);
-            if (body.Length > 2) reason = Encoding.UTF8.GetString(body[2..].Span);
-
+            WebSocketReader.ParseCloseBody(body.Span, out ushort? code, out string? reason);
             closeMessage = new(code, reason);
+
+            var write = () => writer.WriteCloseMessage(code, reason, cancellationToken);
 
             try
             {
-                var codeBody = new MemoryStream(body.Length >= 2 ? body[..2].ToArray() : Array.Empty<byte>());
-                var write = () => writer.WriteSizedMessage(WebSocketOpcode.Close, codeBody, codeBody.Length, cancellationToken);
-
                 if (lockk)
                 {
                     using var _lock = await writerLock.LockAsync(cancellationToken);
@@ -257,6 +250,8 @@ namespace Hydra
             finally { state = closedState; }
         }
 
+        private bool StartClose() => Interlocked.CompareExchange(ref state, closingState, openState) == openState;
+
         private async ValueTask<bool> Interleaver(CancellationToken cancellationToken)
         {
             while (interleaved.TryDequeue(out var frame))
@@ -266,11 +261,7 @@ namespace Hydra
                 {
                     if (info.Opcode == WebSocketOpcode.Ping)
                     {
-                        await writer.WriteSizedMessage(
-                            WebSocketOpcode.Pong,
-                            new MemoryStream(body),
-                            body.Length,
-                            cancellationToken);
+                        await writer.WriteMemoryMessage(WebSocketOpcode.Pong, body, cancellationToken);
                     }
                     else if (info.Opcode == WebSocketOpcode.Pong
                         && body.Length == 1
@@ -280,7 +271,7 @@ namespace Hydra
                     }
                     else if (info.Opcode == WebSocketOpcode.Close)
                     {
-                        await HandleClose(info, body, false, cancellationToken);
+                        await HandleClose(body, false, cancellationToken);
                         return false;
                     }
                 }

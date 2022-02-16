@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Hydra.Core;
+using System;
 using System.IO;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -65,6 +67,44 @@ namespace Hydra.WebSocket13
 
                 if (interleaver is not null && !await interleaver(cancellationToken)) return;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public async ValueTask WriteMemoryMessage(WebSocketOpcode opcode, Memory<byte> body, CancellationToken cancellationToken)
+        {
+            int frameInfoLength = FrameInfoLength(body.Length);
+            int totalLength = frameInfoLength + body.Length;
+            var memory = Writer.GetMemory(totalLength);
+
+            WriteFrameInfo(true, opcode, body.Length, memory[..frameInfoLength].Span);
+            body.CopyTo(memory[frameInfoLength..]);
+
+            Writer.Advance(totalLength);
+            await Writer.FlushAsync(cancellationToken);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public async ValueTask WriteCloseMessage(ushort? code, string? reason, CancellationToken cancellationToken)
+        {
+            int bodyLength = code is not null ? reason is not null ? reason.Utf8Length() + 2 : 2 : 0;
+            int frameInfoLength = FrameInfoLength(bodyLength);
+            int totalLength = frameInfoLength + bodyLength;
+
+            var memory = Writer.GetMemory(totalLength);
+            var bodyMemory = memory[frameInfoLength..];
+
+            WriteFrameInfo(true, WebSocketOpcode.Close, bodyLength, memory[..frameInfoLength].Span);
+
+            if (code is not null)
+            {
+                bodyMemory.Span[0] = (byte)((code.Value & 0xFF00) >> 8);
+                bodyMemory.Span[1] = (byte)(code.Value & 0x00FF);
+
+                if (reason is not null) Encoding.UTF8.GetBytes(reason, bodyMemory[2..].Span);
+            }
+
+            Writer.Advance(totalLength);
+            await Writer.FlushAsync(cancellationToken);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

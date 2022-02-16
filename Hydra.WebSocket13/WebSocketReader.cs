@@ -3,6 +3,7 @@ using System;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -47,6 +48,16 @@ namespace Hydra.WebSocket13
             {
                 Reader.AdvanceTo(consumed, bytes.Position);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ParseCloseBody(ReadOnlySpan<byte> body, out ushort? code, out string? reason)
+        {
+            code = null;
+            reason = null;
+
+            if (body.Length >= 2) code = (ushort)((body[0] << 8) | body[1]);
+            if (body.Length > 2) reason = Encoding.UTF8.GetString(body[2..]);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

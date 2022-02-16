@@ -71,6 +71,11 @@ namespace Hydra.Core
         }
     }
 
+    public static class StringExtensions
+    {
+        public static int Utf8Length(this string s) => Encoding.UTF8.GetByteCount(s);
+    }
+
     public static class SemaphoreSlimeExtensions
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

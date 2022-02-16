@@ -2,7 +2,7 @@
 {
     public static partial class Handlers
     {
-        private readonly static HttpClient httpClient = new();
+        private static readonly HttpClient httpClient = new();
 
         public static async ValueTask<HttpResponse> Cats(HttpRequest request)
         {
