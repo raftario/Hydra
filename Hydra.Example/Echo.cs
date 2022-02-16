@@ -2,7 +2,7 @@
 {
     public static partial class Handlers
     {
-        public static async Task<HttpResponse> Echo(HttpRequest request)
+        public static async ValueTask<HttpResponse> Echo(HttpRequest request)
         {
             await request.ReadHeaders();
 

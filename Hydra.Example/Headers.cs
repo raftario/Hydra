@@ -4,7 +4,7 @@ namespace Hydra.Example
 {
     public static partial class Handlers
     {
-        public static async Task<HttpResponse> Headers(HttpRequest request)
+        public static async ValueTask<HttpResponse> Headers(HttpRequest request)
         {
             await request.ReadHeaders();
 

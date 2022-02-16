@@ -29,7 +29,7 @@ namespace Hydra
         /// <summary>
         /// Response body
         /// </summary>
-        public Stream? Body { get; set; }
+        public Stream Body { get; set; }
 
         /// <summary>
         /// Returns a new response
@@ -41,7 +41,7 @@ namespace Hydra
         {
             Status = status;
             Reason = reason;
-            Body = body;
+            Body = body ?? Stream.Null;
         }
 
         protected HttpResponse(HttpResponse other)
@@ -124,8 +124,8 @@ namespace Hydra
                         throw new HttpResponse.InvalidException("`Content-Length` header present in a response without a body", request, response);
                 }
 
-                if (response.Body is not null) await response.Body.DisposeAsync();
-                response.Body = EmptyStream.Stream;
+                await response.Body.DisposeAsync();
+                response.Body = Stream.Null;
             }
             if (needsClose)
             {
@@ -137,7 +137,7 @@ namespace Hydra
 
             writer.WriteStatusLine(response.Status, response.Reason);
             foreach (var (name, values) in response.Headers) writer.WriteHeader(name, values);
-            await writer.Send(response.Body ?? EmptyStream.Stream, cancellationToken);
+            await writer.Send(response.Body, cancellationToken);
 
             return needsClose;
         }

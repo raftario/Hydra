@@ -179,19 +179,19 @@ namespace Hydra
                     catch (HttpBadRequestException)
                     {
                         HttpWriteErrorResponse(httpWriter, 400, "Bad Request");
-                        await httpWriter.Send(EmptyStream.Stream, cancellationToken);
+                        await httpWriter.Send(Stream.Null, cancellationToken);
                         return;
                     }
                     catch (HttpUriTooLongException)
                     {
                         HttpWriteErrorResponse(httpWriter, 415, "URI Too Long");
-                        await httpWriter.Send(EmptyStream.Stream, cancellationToken);
+                        await httpWriter.Send(Stream.Null, cancellationToken);
                         return;
                     }
                     catch (HttpNotImplementedException)
                     {
                         HttpWriteErrorResponse(httpWriter, 501, "Not Implemented");
-                        await httpWriter.Send(EmptyStream.Stream, cancellationToken);
+                        await httpWriter.Send(Stream.Null, cancellationToken);
                         return;
                     }
 

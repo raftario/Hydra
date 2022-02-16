@@ -12,7 +12,7 @@ Server.HttpHandler handler = handlerName?.ToLower() switch
 };
 
 string hostname = args.Length >= 2 ? args[1] : "localhost";
-var port = args.Length >= 3 ? int.Parse(args[2]) : 8080;
+int port = args.Length >= 3 ? int.Parse(args[2]) : 8080;
 
 Console.WriteLine($"Starting server at `http://{hostname}:{port}`");
 

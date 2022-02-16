@@ -17,4 +17,8 @@
     <ProjectReference Include="..\Hydra.Core\Hydra.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="../LICENSE" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
 </Project>

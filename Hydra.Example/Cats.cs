@@ -4,7 +4,7 @@
     {
         private readonly static HttpClient httpClient = new();
 
-        public static async Task<HttpResponse> Cats(HttpRequest request)
+        public static async ValueTask<HttpResponse> Cats(HttpRequest request)
         {
             var cats = await httpClient.GetAsync("https://cataas.com/cat");
             var body = await cats.Content.ReadAsStreamAsync();

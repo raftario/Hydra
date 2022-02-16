@@ -26,7 +26,7 @@ namespace Hydra
         private Stream? currentStream = null;
 
         internal readonly ConcurrentQueue<(FrameInfo, byte[])> interleaved = new();
-        private readonly ConcurrentDictionary<byte, Action> pings = new();
+        private readonly ConcurrentDictionary<byte, TaskCompletionSource> pings = new();
         private byte ping = 0;
 
         private const int openState = 0;
@@ -104,7 +104,7 @@ namespace Hydra
                 
                 if (currentStream is not null)
                 {
-                    await currentStream.Drain();
+                    await currentStream.Drain(cancellationToken);
                     await currentStream.DisposeAsync();
                     currentStream = null;
                 }
@@ -149,7 +149,7 @@ namespace Hydra
                         return null;
                     }
 
-                    if (pings.TryGetValue(ping.Value, out var handler)) handler();
+                    if (pings.TryGetValue(ping.Value, out var tcs)) tcs.TrySetResult();
                 }
                 else if (frameInfo.Value.Opcode == WebSocketOpcode.Close)
                 {
@@ -173,17 +173,22 @@ namespace Hydra
             }
         }
 
-        public async ValueTask Ping(Action handler, CancellationToken cancellationToken = default)
+        public async ValueTask<Task> Ping(CancellationToken cancellationToken = default)
         {
             if (!Writeable) throw new InvalidOperationException();
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken);
             cancellationToken = cts.Token;
 
+            var tcs = new TaskCompletionSource();
+            cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
+
             byte ping = this.ping++;
-            pings[ping] = handler;
+            pings[ping] = tcs;
 
             using var _lock = await writerLock.LockAsync(cancellationToken);
             await writer.WriteSizedMessage(WebSocketOpcode.Ping, new SingleByteStream(ping), 1, cancellationToken);
+
+            return tcs.Task;
         }
 
         internal async ValueTask HandleClose(FrameInfo frame, Memory<byte> body, bool lockk, CancellationToken cancellationToken)
@@ -229,9 +234,9 @@ namespace Hydra
                     }
                     else if (info.Opcode == WebSocketOpcode.Pong
                         && body.Length == 1
-                        && pings.TryGetValue(body[0], out var handler))
+                        && pings.TryGetValue(body[0], out var tcs))
                     {
-                        handler();
+                        tcs.TrySetResult();
                     }
                     else if (info.Opcode == WebSocketOpcode.Close)
                     {
@@ -247,6 +252,8 @@ namespace Hydra
         public async ValueTask DisposeAsync()
         {
             if (currentStream is not null) await currentStream.DisposeAsync();
+            foreach (var (_, tcs) in pings) tcs.TrySetCanceled();
+
             readerLock.Dispose();
             writerLock.Dispose();
             GC.SuppressFinalize(this);

@@ -4,7 +4,7 @@ namespace Hydra.Example
 {
     public static partial class Handlers
     {
-        public static Task<HttpResponse> Hello(HttpRequest request)
+        public static ValueTask<HttpResponse> Hello(HttpRequest request)
         {
             string hello = "Hello, Hydra!";
             var body = new MemoryStream(Encoding.UTF8.GetBytes(hello));
@@ -13,7 +13,7 @@ namespace Hydra.Example
             response.Headers["Content-Length"] = body.Length.ToString();
             response.Headers["Content-Type"] = "text/plain; encoding=utf-8";
 
-            return Task.FromResult(response);
+            return ValueTask.FromResult(response);
         }
     }
 }

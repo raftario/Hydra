@@ -2,7 +2,7 @@
 {
     public static partial class Handlers
     {
-        public static Task<HttpResponse> File(HttpRequest request)
+        public static ValueTask<HttpResponse> File(HttpRequest request)
         {
             var body = new FileStream("LICENSE", FileMode.Open);
 
@@ -10,7 +10,7 @@
             response.Headers["Content-Length"] = body.Length.ToString();
             response.Headers["Content-Type"] = "text/plain; encoding=utf-8";
 
-            return Task.FromResult(response);
+            return ValueTask.FromResult(response);
         }
     }
 }

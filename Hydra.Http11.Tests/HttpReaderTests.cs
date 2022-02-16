@@ -177,7 +177,7 @@ namespace Hydra.Http11.Tests
                     else if (headerResult.Finished) break;
                 }
 
-                body = reader.Body;
+                body = reader.Stream;
                 return true;
             }
         }
