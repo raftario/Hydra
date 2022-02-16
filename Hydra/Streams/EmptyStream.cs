@@ -17,7 +17,6 @@ namespace Hydra
         private EmptyStream() { }
 
         public override long Length => 0;
-        public override long Position { get => 0; set => throw new NotSupportedException(); }
 
         public override int Read(byte[] buffer, int offset, int count) => 0;
         public override int Read(Span<byte> buffer) => 0;

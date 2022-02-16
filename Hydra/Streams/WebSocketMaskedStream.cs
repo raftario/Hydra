@@ -6,23 +6,18 @@ using System.Threading.Tasks;
 
 namespace Hydra
 {
-    internal class WebSocketMaskedStream : ReadOnlyStream
+    internal class WebSocketMaskedStream : WrapperStream
     {
-        private readonly Stream stream;
         private readonly WebSocketMasker masker;
 
-        internal WebSocketMaskedStream(Stream stream, uint maskingKey)
+        internal WebSocketMaskedStream(Stream stream, uint maskingKey) : base(stream)
         {
-            this.stream = stream;
             masker = new(maskingKey);
         }
 
-        public override long Length => stream.Length;
-        public override long Position { get => stream.Position; set => throw new NotImplementedException(); }
-
         public override int Read(Span<byte> buffer)
         {
-            int read = stream.Read(buffer);
+            int read = base.Read(buffer);
             masker.Mask(buffer[..read]);
             return read;
         }
@@ -31,7 +26,7 @@ namespace Hydra
 
         public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
         {
-            int read = await stream.ReadAsync(buffer, cancellationToken);
+            int read = await base.ReadAsync(buffer, cancellationToken);
             masker.Mask(buffer.Span[..read]);
             return read;
         }
@@ -40,17 +35,12 @@ namespace Hydra
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                stream.Dispose();
-                masker.Dispose();
-            }
+            if (disposing) masker.Dispose();
             base.Dispose(disposing);
         }
         public override async ValueTask DisposeAsync()
         {
             masker.Dispose();
-            await stream.DisposeAsync();
             await base.DisposeAsync();
         }
     }

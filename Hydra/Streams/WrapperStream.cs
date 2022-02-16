@@ -15,7 +15,6 @@ namespace Hydra
         }
 
         public override long Length => stream.Length;
-        public override long Position { get => stream.Position; set => throw new NotSupportedException(); }
 
         public override int Read(Span<byte> buffer) => stream.Read(buffer);
         public override int Read(byte[] buffer, int offset, int count) => stream.Read(buffer, offset, count);

@@ -34,7 +34,6 @@ namespace Hydra
         }
 
         public override long Length => throw new NotSupportedException();
-        public override long Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
         {

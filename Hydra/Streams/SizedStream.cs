@@ -25,9 +25,6 @@ namespace Hydra
             this.length = length;
         }
 
-        public override long Length => length;
-        public override long Position { get => n; set => throw new NotSupportedException(); }
-
         public override int Read(Span<byte> buffer)
         {
             int length = MaxCount(buffer.Length);

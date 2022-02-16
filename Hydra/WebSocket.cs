@@ -36,17 +36,11 @@ namespace Hydra
 
         internal WebSocketClose closeMessage = default;
 
-        public bool IsClosed => state is closedState;
-        public bool IsReadable => state is openState;
-        public bool IsWriteable => state is openState;
+        public bool Closed => state is closedState;
+        public bool Readable => state is openState;
+        public bool Writeable => state is openState;
 
-        public int MaxFrameLength
-        {
-            get => writer.MaxFrameLength;
-            set => writer.MaxFrameLength = value;
-        }
-
-        public WebSocketClose CloseMessage => IsClosed ? closeMessage : throw new InvalidOperationException();
+        public WebSocketClose CloseMessage => Closed ? closeMessage : throw new InvalidOperationException();
         public CancellationToken CancellationToken { get; }
 
         internal WebSocket(PipeReader reader, PipeWriter writer, CancellationToken cancellationToken)
@@ -59,7 +53,7 @@ namespace Hydra
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public async ValueTask Send(WebSocketMessage message, CancellationToken cancellationToken = default)
         {
-            if (!IsWriteable) throw new InvalidOperationException();
+            if (!Writeable) throw new InvalidOperationException();
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken);
             cancellationToken = cts.Token;
 
@@ -100,7 +94,7 @@ namespace Hydra
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public async ValueTask<WebSocketMessage?> Receive(CancellationToken cancellationToken = default)
         {
-            if (!IsReadable) throw new InvalidOperationException();
+            if (!Readable) throw new InvalidOperationException();
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken);
             cancellationToken = cts.Token;
 
@@ -181,7 +175,7 @@ namespace Hydra
 
         public async ValueTask Ping(Action handler, CancellationToken cancellationToken = default)
         {
-            if (!IsWriteable) throw new InvalidOperationException();
+            if (!Writeable) throw new InvalidOperationException();
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken);
             cancellationToken = cts.Token;
 

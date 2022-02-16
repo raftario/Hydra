@@ -18,7 +18,6 @@ namespace Hydra
         }
 
         public override long Length => 1;
-        public override long Position { get => done ? 1 : 0; set => throw new NotImplementedException(); }
 
         public override int Read(Span<byte> buffer)
         {
