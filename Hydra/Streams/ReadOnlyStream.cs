@@ -5,10 +5,11 @@ using System.Threading.Tasks;
 namespace Hydra
 {
     /// <summary>
-    /// A read only stream that doesn't own any resources
+    /// A read only stream
     /// </summary>
-    public abstract class ReadOnlyStream : Stream
+    internal abstract class ReadOnlyStream : Stream
     {
+        public override bool CanRead => true;
         public override bool CanSeek => false;
         public override bool CanWrite => false;
 
@@ -16,8 +17,5 @@ namespace Hydra
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
         public override void SetLength(long value) => throw new NotSupportedException();
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-
-        protected override void Dispose(bool disposing) { }
-        public override ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }

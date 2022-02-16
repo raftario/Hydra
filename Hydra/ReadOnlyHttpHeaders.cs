@@ -12,6 +12,12 @@ namespace Hydra
     {
         internal readonly HttpHeaders inner = new();
 
+        public ReadOnlyHttpHeaders() { }
+        protected ReadOnlyHttpHeaders(ReadOnlyHttpHeaders other)
+        {
+            inner = other.inner;
+        }
+
         public StringValues this[string name] => inner[name];
 
         public IEnumerable<string> Keys => inner.Keys;

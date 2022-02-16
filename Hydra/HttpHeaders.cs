@@ -14,6 +14,12 @@ namespace Hydra
     {
         private readonly Dictionary<string, StringValues> dictionary = new(StringComparer.OrdinalIgnoreCase);
 
+        public HttpHeaders() { }
+        protected HttpHeaders(HttpHeaders other)
+        {
+            dictionary = other.dictionary;
+        }
+
         private ICollection<KeyValuePair<string, StringValues>> Collection => dictionary;
 
         public StringValues this[string name] { get => dictionary[name]; set => dictionary[name] = value; }

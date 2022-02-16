@@ -22,8 +22,8 @@ namespace Hydra
         /// </summary>
         /// <param name="request">The received HTTP request</param>
         /// <returns>The HTTP response to send back</returns>
-        public delegate Task<HttpResponse> HttpHandler(HttpRequest request);
-        public delegate Task WebSocketHandler(WebSocket socket);
+        public delegate ValueTask<HttpResponse> HttpHandler(HttpRequest request);
+        public delegate ValueTask<WebSocketClose> WebSocketHandler(WebSocket socket);
 
         /// <summary>
         /// Listener used to accept clients
@@ -179,19 +179,19 @@ namespace Hydra
                     catch (HttpBadRequestException)
                     {
                         HttpWriteErrorResponse(httpWriter, 400, "Bad Request");
-                        await httpWriter.Send(EmptyStream.Body, cancellationToken);
+                        await httpWriter.Send(EmptyStream.Stream, cancellationToken);
                         return;
                     }
                     catch (HttpUriTooLongException)
                     {
                         HttpWriteErrorResponse(httpWriter, 415, "URI Too Long");
-                        await httpWriter.Send(EmptyStream.Body, cancellationToken);
+                        await httpWriter.Send(EmptyStream.Stream, cancellationToken);
                         return;
                     }
                     catch (HttpNotImplementedException)
                     {
                         HttpWriteErrorResponse(httpWriter, 501, "Not Implemented");
-                        await httpWriter.Send(EmptyStream.Body, cancellationToken);
+                        await httpWriter.Send(EmptyStream.Stream, cancellationToken);
                         return;
                     }
 
@@ -206,6 +206,7 @@ namespace Hydra
                     catch (HttpBadRequestException) { return; }
                     finally
                     {
+                        await request.Body.DisposeAsync();
                         if (response.Body is not null) await response.Body.DisposeAsync();
                     }
                 }
@@ -222,7 +223,7 @@ namespace Hydra
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void HttpWriteErrorResponse(HttpWriter httpWriter, int status, string reason)
+        private static void HttpWriteErrorResponse(HttpWriter httpWriter, int status, string reason)
         {
             httpWriter.WriteStatusLine(status, reason);
             httpWriter.WriteHeader("Content-Length", "0");
@@ -232,6 +233,7 @@ namespace Hydra
         public void Dispose()
         {
             listener.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         public class ExceptionEventArgs : EventArgs

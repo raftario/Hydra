@@ -7,7 +7,7 @@ namespace Hydra
     {
         public ushort Status { get; }
 
-        public WebSocketCloseMessage(ushort status, Stream body) : base(WebSocketOpcode.Close, body)
+        internal WebSocketCloseMessage(ushort status, Stream body) : base(WebSocketOpcode.Close, body)
         {
             Status = status;
         }

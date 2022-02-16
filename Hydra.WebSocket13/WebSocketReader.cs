@@ -2,12 +2,13 @@
 using System;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Hydra.WebSocket13
 {
-    public readonly record struct FrameInfo(bool Fin, WebSocketOpcode opcode, bool mask, long length, byte[] maskingKey);
+    public readonly record struct FrameInfo(bool Fin, WebSocketOpcode Opcode, bool Mask, long Length, uint MaskingKey);
 
     /// <summary>
     /// An reader for websocket messages
@@ -30,12 +31,6 @@ namespace Hydra.WebSocket13
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public async ValueTask<FrameInfo?> ReadFrameInfo(CancellationToken cancellationToken = default)
         {
-            bool fin;
-            WebSocketOpcode opcode;
-            bool mask;
-            long length;
-            byte[] maskingKey;
-
             // this is the max possible frame info size
             var result = await Reader.ReadAtLeastAsync(14, cancellationToken);
             var buffer = result.Buffer;
@@ -44,59 +39,7 @@ namespace Hydra.WebSocket13
 
             try
             {
-                if (!bytes.Next(out byte finRsvOpcode)) return null;
-
-                fin = (finRsvOpcode & finMask) != 0;
-                if ((finRsvOpcode & rsvMask) != 0) throw new NonZeroRsvException();
-                opcode = (WebSocketOpcode)(finRsvOpcode & opcodeMask);
-                if (!Enum.IsDefined(opcode)) throw new InvalidOpcodeException();
-
-                if (!bytes.Next(out byte maskLength)) return null;
-
-                mask = (maskLength & maskMask) != 0;
-                length = maskLength & lengthMask;
-
-                if (length == 126)
-                {
-                    if (!bytes.Next(out byte l1)) return null;
-                    if (!bytes.Next(out byte l0)) return null;
-
-                    length = (l1 << (8 * 1))
-                        & (l0 << (8 * 0));
-                }
-                else if (length == 127)
-                {
-                    if (!bytes.Next(out byte l7)) return null;
-                    if ((l7 & 0b1000_0000) != 0) throw new InvalidFrameLengthException();
-
-                    if (!bytes.Next(out byte l6)) return null;
-                    if (!bytes.Next(out byte l5)) return null;
-                    if (!bytes.Next(out byte l4)) return null;
-                    if (!bytes.Next(out byte l3)) return null;
-                    if (!bytes.Next(out byte l2)) return null;
-                    if (!bytes.Next(out byte l1)) return null;
-                    if (!bytes.Next(out byte l0)) return null;
-
-                    length = ((long)l7 << (8 * 7))
-                        & ((long)l6 << (8 * 6))
-                        & ((long)l5 << (8 * 5))
-                        & ((long)l4 << (8 * 4))
-                        & ((long)l3 << (8 * 3))
-                        & ((long)l2 << (8 * 2))
-                        & ((long)l1 << (8 * 1))
-                        & ((long)l0 << (8 * 0));
-                }
-
-                if (mask)
-                {
-                    maskingKey = new byte[4];
-                    if (!bytes.Next(out maskingKey[0])) return null;
-                    if (!bytes.Next(out maskingKey[1])) return null;
-                    if (!bytes.Next(out maskingKey[2])) return null;
-                    if (!bytes.Next(out maskingKey[3])) return null;
-                }
-                else maskingKey = Array.Empty<byte>();
-
+                if (!ParseFrameInfo(ref bytes, out bool fin, out var opcode, out bool mask, out long length, out uint maskingKey)) return null;
                 consumed = bytes.Position;
                 return new(fin, opcode, mask, length, maskingKey);
             }
@@ -104,6 +47,77 @@ namespace Hydra.WebSocket13
             {
                 Reader.AdvanceTo(consumed, bytes.Position);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ParseFrameInfo(
+            ref Bytes bytes,
+            out bool fin,
+            out WebSocketOpcode opcode,
+            out bool mask,
+            out long length,
+            out uint maskingKey)
+        {
+            fin = default; 
+            opcode = default;
+            mask = default;
+            length = default;
+            maskingKey = 0;
+
+            if (!bytes.Next(out byte finRsvOpcode)) return false;
+
+            fin = (finRsvOpcode & finMask) != 0;
+            if ((finRsvOpcode & rsvMask) != 0) throw new NonZeroRsvException();
+            opcode = (WebSocketOpcode)(finRsvOpcode & opcodeMask);
+            if (!Enum.IsDefined(opcode)) throw new InvalidOpcodeException();
+
+            if (!bytes.Next(out byte maskLength)) return false;
+
+            mask = (maskLength & maskMask) != 0;
+            length = maskLength & lengthMask;
+
+            if (length == 126)
+            {
+                if (!bytes.Next(out byte l1)) return false;
+                if (!bytes.Next(out byte l0)) return false;
+
+                length = (l1 << (8 * 1))
+                    & (l0 << (8 * 0));
+            }
+            else if (length == 127)
+            {
+                if (!bytes.Next(out byte l7)) return false;
+                if ((l7 & 0b1000_0000) != 0) throw new InvalidFrameLengthException();
+
+                if (!bytes.Next(out byte l6)) return false;
+                if (!bytes.Next(out byte l5)) return false;
+                if (!bytes.Next(out byte l4)) return false;
+                if (!bytes.Next(out byte l3)) return false;
+                if (!bytes.Next(out byte l2)) return false;
+                if (!bytes.Next(out byte l1)) return false;
+                if (!bytes.Next(out byte l0)) return false;
+
+                length = ((long)l7 << (8 * 7))
+                    & ((long)l6 << (8 * 6))
+                    & ((long)l5 << (8 * 5))
+                    & ((long)l4 << (8 * 4))
+                    & ((long)l3 << (8 * 3))
+                    & ((long)l2 << (8 * 2))
+                    & ((long)l1 << (8 * 1))
+                    & ((long)l0 << (8 * 0));
+            }
+
+            maskingKey = 0;
+            if (mask)
+            {
+                var maskingKeySpan = maskingKey.AsRawSpan();
+                if (!bytes.Next(out maskingKeySpan[0])) return false;
+                if (!bytes.Next(out maskingKeySpan[1])) return false;
+                if (!bytes.Next(out maskingKeySpan[2])) return false;
+                if (!bytes.Next(out maskingKeySpan[3])) return false;
+            }
+
+            return true;
         }
     }
 }

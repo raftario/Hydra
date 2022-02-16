@@ -8,36 +8,32 @@ namespace Hydra
     /// <summary>
     /// A wrapper around a stream that limits the amount of data that can be read from it
     /// </summary>
-    public class SizedStream : ReadOnlyStream
+    internal class SizedStream : WrapperStream
     {
-        private readonly Stream stream;
         private readonly int length;
         private int n = 0;
 
-        private int Count(int count) => Math.Min(count, length - n);
+        private int MaxCount(int count) => Math.Min(count, length - n);
 
         /// <summary>
         /// Wraps the given stream for length limitation
         /// </summary>
         /// <param name="stream">Stream to wrap</param>
         /// <param name="length">Length to limit to</param>
-        public SizedStream(Stream stream, int length)
+        internal SizedStream(Stream stream, int length) : base(stream)
         {
-            this.stream = stream;
             this.length = length;
         }
-
-        public override bool CanRead => stream.CanRead;
 
         public override long Length => length;
         public override long Position { get => n; set => throw new NotSupportedException(); }
 
         public override int Read(Span<byte> buffer)
         {
-            int length = Count(buffer.Length);
+            int length = MaxCount(buffer.Length);
             if (length == 0) return 0;
 
-            int read = stream.Read(buffer[..length]);
+            int read = base.Read(buffer[..length]);
             n += read;
             return read;
         }
@@ -46,10 +42,10 @@ namespace Hydra
 
         public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
         {
-            int length = Count(buffer.Length);
+            int length = MaxCount(buffer.Length);
             if (length == 0) return 0;
 
-            int read = await stream.ReadAsync(buffer[..length], cancellationToken);
+            int read = await base.ReadAsync(buffer[..length], cancellationToken);
             n += read;
             return read;
         }

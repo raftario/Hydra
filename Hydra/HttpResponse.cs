@@ -44,6 +44,14 @@ namespace Hydra
             Body = body;
         }
 
+        protected HttpResponse(HttpResponse other)
+        {
+            Status = other.Status;
+            Reason = other.Reason;
+            Headers = other.Headers;
+            Body = other.Body;
+        }
+
         /// <summary>
         /// An exception thrown by the server when the response provided to it is invalid
         /// </summary>
@@ -117,7 +125,7 @@ namespace Hydra
                 }
 
                 if (response.Body is not null) await response.Body.DisposeAsync();
-                response.Body = EmptyStream.Body;
+                response.Body = EmptyStream.Stream;
             }
             if (needsClose)
             {
@@ -129,7 +137,7 @@ namespace Hydra
 
             writer.WriteStatusLine(response.Status, response.Reason);
             foreach (var (name, values) in response.Headers) writer.WriteHeader(name, values);
-            await writer.Send(response.Body ?? EmptyStream.Body, cancellationToken);
+            await writer.Send(response.Body ?? EmptyStream.Stream, cancellationToken);
 
             return needsClose;
         }

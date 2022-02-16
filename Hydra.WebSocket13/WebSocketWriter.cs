@@ -9,7 +9,10 @@ namespace Hydra.WebSocket13
 {
     public class WebSocketWriter
     {
+        public delegate ValueTask<bool> Interleaver(CancellationToken cancellationToken);
+
         public int MaxFrameLength = 8 * 1024;
+        public int MaxFrameInfoLength => FrameInfoLength(MaxFrameLength);
 
         public readonly PipeWriter Writer;
 
@@ -20,13 +23,8 @@ namespace Hydra.WebSocket13
             Writer = writer;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ValueTask Write(WebSocketOpcode opcode, Stream data, long? length = null, CancellationToken cancellationToken = default) => length is not null
-            ? WriteSized(opcode, data, length.Value, cancellationToken)
-            : WriteUnsized(opcode, data, cancellationToken);
-
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private async ValueTask WriteSized(WebSocketOpcode opcode, Stream data, long length, CancellationToken cancellationToken)
+        public async ValueTask WriteSizedMessage(WebSocketOpcode opcode, Stream body, long length, CancellationToken cancellationToken)
         {
             int frameInfoLength = FrameInfoLength(length);
             var memory = Writer.GetMemory(frameInfoLength)[..frameInfoLength];
@@ -34,18 +32,18 @@ namespace Hydra.WebSocket13
             WriteFrameInfo(true, opcode, length, memory.Span);
             Writer.Advance(frameInfoLength);
 
-            await data.CopyToAsync(Writer, cancellationToken);
+            await body.CopyToAsync(Writer, cancellationToken);
             await Writer.FlushAsync(cancellationToken);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private async ValueTask WriteUnsized(WebSocketOpcode opcode, Stream data, CancellationToken cancellationToken)
+        public async ValueTask WriteUnsizedMessage(WebSocketOpcode opcode, Stream body, Interleaver? interleaver, CancellationToken cancellationToken)
         {
             while (true)
             {
                 var frameMemory = Writer.GetMemory(MaxFrameLength);
-                var dataMemory = frameMemory[4..^6];
-                int read = await data.ReadAsync(dataMemory, cancellationToken);
+                var dataMemory = frameMemory[MaxFrameInfoLength..^8];
+                int read = await body.ReadAsync(dataMemory, cancellationToken);
 
                 if (read == 0)
                 {
@@ -57,15 +55,15 @@ namespace Hydra.WebSocket13
                 }
 
                 int frameInfoLength = FrameInfoLength(read);
-
-                if (frameInfoLength == 2) dataMemory[..read].CopyTo(frameMemory[2..]);
-                else if (frameInfoLength == 10) dataMemory[..read].CopyTo(frameMemory[10..]);
+                if (frameInfoLength != MaxFrameInfoLength) dataMemory[..read].CopyTo(frameMemory[frameInfoLength..]);
 
                 WriteFrameInfo(false, opcode, read, frameMemory.Span[..frameInfoLength]);
 
                 Writer.Advance(frameInfoLength + read);
                 await Writer.FlushAsync(cancellationToken);
                 if (opcode != WebSocketOpcode.Continuation) opcode = WebSocketOpcode.Continuation;
+
+                if (interleaver is not null && !await interleaver(cancellationToken)) return;
             }
         }
 

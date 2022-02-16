@@ -8,15 +8,13 @@ namespace Hydra
     /// <summary>
     /// An empty stream which is always done reading and never returns any data
     /// </summary>
-    public class EmptyStream : ReadOnlyStream
+    internal class EmptyStream : ReadOnlyStream
     {
         /// <summary>
         /// Shared empty stream
         /// </summary>
-        public static readonly Stream Body = new EmptyStream();
+        internal static readonly Stream Stream = new EmptyStream();
         private EmptyStream() { }
-
-        public override bool CanRead => true;
 
         public override long Length => 0;
         public override long Position { get => 0; set => throw new NotSupportedException(); }

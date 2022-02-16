@@ -7,6 +7,8 @@ namespace Hydra
 {
     public class WebSocketTextMessage : WebSocketMessage
     {
+        internal WebSocketTextMessage(Stream body) : base(WebSocketOpcode.Text, body) { }
+
         public WebSocketTextMessage(string body) :
             base(WebSocketOpcode.Text, new MemoryStream(Encoding.UTF8.GetBytes(body))) { }
 

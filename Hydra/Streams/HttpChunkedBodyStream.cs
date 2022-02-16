@@ -13,7 +13,7 @@ namespace Hydra
     /// 
     /// This class is not responsible for disposing of the wrapped stream
     /// </summary>
-    public class HttpChunkedBodyStream : ReadOnlyStream
+    internal class HttpChunkedBodyStream : ReadOnlyStream
     {
         private readonly ChunkedReader reader;
         private readonly HttpHeaders headers;
@@ -32,19 +32,6 @@ namespace Hydra
             this.reader = new(reader);
             this.headers = headers;
         }
-
-        /// <summary>
-        /// Wraps the given stream for decoding
-        /// </summary>
-        /// <param name="stream">Chunk encoded stream to wrap</param>
-        /// <param name="headers">Instance to parse optional trailing headers into</param>
-        public HttpChunkedBodyStream(Stream stream, HttpHeaders headers)
-        {
-            reader = new(PipeReader.Create(stream));
-            this.headers = headers;
-        }
-
-        public override bool CanRead => true;
 
         public override long Length => throw new NotSupportedException();
         public override long Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }

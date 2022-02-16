@@ -1,4 +1,5 @@
-﻿using Hydra.Http11;
+﻿using Hydra.Core;
+using Hydra.Http11;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -27,13 +28,13 @@ namespace Hydra
         /// <summary>
         /// Request method
         /// </summary>
-        public string Method { get; set; }
+        public string Method { get; }
         /// <summary>
         /// Request URI
         /// 
         /// Contains the absolute path and query
         /// </summary>
-        public string Uri { get; set; }
+        public string Uri { get; }
         /// <summary>
         /// Request protocol version
         /// </summary>
@@ -92,14 +93,29 @@ namespace Hydra
             this.reader = reader;
         }
 
+        protected HttpRequest(HttpRequest other)
+        {
+            socket = other.socket;
+            reader = other.reader;
+            body = other.body;
+            Method = other.Method;
+            Uri = other.Uri;
+            Version = other.Version;
+            Encoding = other.Encoding;
+            CancellationToken = other.CancellationToken;
+        }
+
         /// <summary>
         /// Reads the request headers if they haven't been yet
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public async ValueTask ReadHeaders()
+        public async ValueTask ReadHeaders(CancellationToken cancellationToken = default)
         {
             if (body != null) return;
-            if (!await reader.ReadHeaders(Headers.inner, CancellationToken)) throw new ConnectionClosedException();
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken);
+            cancellationToken = cts.Token;
+
+            if (!await reader.ReadHeaders(Headers.inner, cancellationToken)) throw new ConnectionClosedException();
             Validate();
         }
 
@@ -153,7 +169,7 @@ namespace Hydra
                 body = new SizedStream(reader.Body, length);
             }
             // if a request has neither Transfer-Encoding nor Content-Length headers it is assumed to have an empty body
-            else body = EmptyStream.Body;
+            else body = EmptyStream.Stream;
         }
 
         /// <summary>
@@ -164,19 +180,7 @@ namespace Hydra
         internal async ValueTask Drain()
         {
             await ReadHeaders();
-
-            var pool = ArrayPool<byte>.Shared;
-            byte[] buffer = pool.Rent(4 * 1024);
-            int read = 1;
-
-            try
-            {
-                while (read > 0) read = await body!.ReadAsync(buffer, CancellationToken);
-            }
-            finally
-            {
-                pool.Return(buffer);
-            }
+            await body!.Drain(CancellationToken);
         }
 
         /// <summary>

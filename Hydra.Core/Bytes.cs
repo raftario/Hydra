@@ -115,9 +115,6 @@ namespace Hydra.Core
         /// </summary>
         /// <param name="offset">Offset from the read cursor to advance to</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Consume(int offset = 0)
-        {
-            consumedPosition = sequence.GetPosition(index + offset, currentPosition);
-        }
+        public void Consume(int offset = 0) => consumedPosition = sequence.GetPosition(index + offset, currentPosition);
     }
 }

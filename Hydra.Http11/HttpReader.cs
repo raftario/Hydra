@@ -25,7 +25,7 @@ namespace Hydra.Http11
         /// Maximum length to process in attempt to parse the start line before bailing
         /// </summary>
         public int MaxStartLineLength = 8 * 1024;
-        public Stream Body => Reader.AsStream();
+        public Stream Body => Reader.AsStream(false);
 
         public HttpReader(PipeReader reader) : base(reader) { }
 
@@ -48,7 +48,7 @@ namespace Hydra.Http11
 
                 try
                 {
-                    if (ParseStartLine(ref bytes, out string? method, out string? uri, out HttpVersion version))
+                    if (ParseStartLine(ref bytes, out string? method, out string? uri, out var version))
                     {
                         consumed = bytes.Position;
                         return new(ParseStatus.Complete, new(method, uri, version));
