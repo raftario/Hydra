@@ -20,10 +20,6 @@ namespace Hydra.Http11
     /// </summary>
     public class ChunkSizeTooLongException : HttpBadRequestException { }
     /// <summary>
-    /// An exception thrown when a signel header is longer than the reader is willing to parse
-    /// </summary>
-    public class HeaderTooLongException : HttpNotImplementedException { }
-    /// <summary>
     /// An exception thrown when invalid characters are present in a chunk extension
     /// </summary>
     public class InvalidChunkExtensionException : HttpBadRequestException { }
@@ -55,10 +51,16 @@ namespace Hydra.Http11
     /// An exception thrown when invalid characters are present in the protocol version string
     /// </summary>
     public class InvalidVersionException : HttpBadRequestException { }
+
     /// <summary>
     /// An exception thrown when the start line is longer than the reader is willing to parse
     /// </summary>
     public class StartLineTooLongException : HttpUriTooLongException { }
+
+    /// <summary>
+    /// An exception thrown when a signel header is longer than the reader is willing to parse
+    /// </summary>
+    public class HeaderTooLongException : HttpNotImplementedException { }
     /// <summary>
     /// An exception thrown when the listed protocol version is not supported by the parser
     /// </summary>

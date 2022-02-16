@@ -21,11 +21,12 @@ namespace Hydra
     /// or missing Host header
     /// </summary>
     public class InvalidHostException : HttpBadRequestException { }
-    public class LoneContinuationFrameException : WebSocketInvalidFrameException { }
-    public class NonFrameableMessageFramedException : WebSocketInvalidFrameException { }
     /// <summary>
     /// An exception thrown by the server if it can't determine the length of a request body.
     /// </summary>
     public class UnknownBodyLengthException : HttpBadRequestException { }
+
+    public class LoneContinuationFrameException : WebSocketInvalidFrameException { }
+    public class NonFrameableMessageFramedException : WebSocketInvalidFrameException { }
     public class UnmaskedBodyException : WebSocketInvalidFrameException { }
 }
