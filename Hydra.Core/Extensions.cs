@@ -42,34 +42,18 @@ namespace Hydra.Core
     {
         public static async ValueTask Drain(this Stream stream, CancellationToken cancellationToken = default)
         {
-            var pool = ArrayPool<byte>.Shared;
-            byte[] buffer = pool.Rent(4 * 1024);
-            int read = 1;
+            using var buffer = ArrayPool<byte>.Shared.RentDisposable(4 * 1024);
 
-            try
-            {
-                while (read > 0) read = await stream!.ReadAsync(buffer, cancellationToken);
-            }
-            finally
-            {
-                pool.Return(buffer);
-            }
+            int read = 1;
+            while (read > 0) read = await stream.ReadAsync(buffer, cancellationToken);
         }
 
         public static async ValueTask<byte?> ReadByteAsync(this Stream stream, CancellationToken cancellationToken = default)
         {
-            var pool = ArrayPool<byte>.Shared;
-            byte[] buffer = pool.Rent(1);
+            using var buffer = ArrayPool<byte>.Shared.RentDisposable(1);
 
-            try
-            {
-                int read = await stream.ReadAsync(buffer.AsMemory()[..1], cancellationToken);
-                return read > 0 ? buffer[0] : null;
-            }
-            finally
-            {
-                pool.Return(buffer);
-            }
+            int read = await stream.ReadAsync(buffer[..1], cancellationToken);
+            return read > 0 ? buffer[0] : null;
         }
 
         public static async ValueTask<bool> ReadAllAsync(this Stream stream, Memory<byte> buffer, CancellationToken cancellationToken = default)
@@ -96,8 +80,30 @@ namespace Hydra.Core
             return new(s);
         }
     }
-    public readonly record struct SemaphoreSlimLock(SemaphoreSlim s) : IDisposable
+    public readonly record struct SemaphoreSlimLock(SemaphoreSlim Semaphore) : IDisposable
     {
-        public void Dispose() => s.Release();
+        public void Dispose() => Semaphore.Release();
+    }
+
+    public static class ArrayPoolExtensions
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DisposableBuffer<T> RentDisposable<T>(this ArrayPool<T> pool, int minimumLength) => new(pool.Rent(minimumLength), pool);
+    }
+    public readonly record struct DisposableBuffer<T>(T[] Buffer, ArrayPool<T> Source) : IDisposable
+    {
+        public static implicit operator T[](DisposableBuffer<T> buffer) => buffer.Buffer;
+        public static implicit operator Memory<T>(DisposableBuffer<T> buffer) => buffer.Buffer.AsMemory();
+        public static implicit operator Span<T>(DisposableBuffer<T> buffer) => buffer.Buffer.AsSpan();
+
+        public T this[Index index] {
+            get => Buffer[index];
+            set => Buffer[index] = value;
+        }
+        public Memory<T> this[Range range] => Buffer.AsMemory()[range];
+
+        public int Length => Buffer.Length;
+
+        public void Dispose() => Source.Return(Buffer);
     }
 }

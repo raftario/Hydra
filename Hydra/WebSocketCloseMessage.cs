@@ -1,15 +1,7 @@
-﻿using Hydra.WebSocket13;
-using System.IO;
-
-namespace Hydra
+﻿namespace Hydra
 {
-    public class WebSocketCloseMessage : WebSocketMessage
+    public readonly record struct WebSocketCloseMessage(ushort? Code = null, string? Reason = null)
     {
-        public ushort Status { get; }
-
-        internal WebSocketCloseMessage(ushort status, Stream body) : base(WebSocketOpcode.Close, body)
-        {
-            Status = status;
-        }
+        public static implicit operator WebSocketCloseMessage(ushort code) => new(code);
     }
 }

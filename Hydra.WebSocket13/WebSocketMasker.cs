@@ -12,14 +12,14 @@ namespace Hydra.WebSocket13
         private static readonly int vecLength = Vector<byte>.Count;
         private static readonly int keyLength = 4 + vecLength - 1;
 
-        private readonly byte[] key;
+        private readonly DisposableBuffer<byte> key;
         private int i = 0;
 
-        private Vector<byte> KeyVec => new(key.AsSpan()[i..]);
+        private Vector<byte> KeyVec => new(key[i..].Span);
 
         public WebSocketMasker(uint key)
         {
-            this.key = ArrayPool<byte>.Shared.Rent(keyLength);
+            this.key = ArrayPool<byte>.Shared.RentDisposable(keyLength);
             var keySpan = key.AsRawSpan();
             for (int ki = 0; ki < keyLength; ki++) this.key[ki] = keySpan[ki % 4];
         }
@@ -42,6 +42,6 @@ namespace Hydra.WebSocket13
             }
         }
 
-        public void Dispose() => ArrayPool<byte>.Shared.Return(key);
+        public void Dispose() => key.Dispose();
     }
 }

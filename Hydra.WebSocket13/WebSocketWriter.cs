@@ -77,8 +77,8 @@ namespace Hydra.WebSocket13
             {
                 location[1] = 126;
 
-                location[2] = (byte)((length & (0xFF << (8 * 1))) >> (8 * 1));
-                location[3] = (byte)((length & (0xFF << (8 * 0))) >> (8 * 0));
+                location[2] = (byte)((length & 0xFF00) >> 8);
+                location[3] = (byte)(length & 0xFF00);
             }
             else
             {
