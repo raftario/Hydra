@@ -6,7 +6,6 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -66,6 +65,8 @@ namespace Hydra
 
             using (var _lock = await writerLock.LockAsync(cancellationToken))
             {
+                if (!await Interleaver(cancellationToken)) throw new ClosedException();
+
                 if (length is not null)
                 {
                     await writer.WriteSizedMessage(
@@ -97,6 +98,11 @@ namespace Hydra
 
             while (true)
             {
+                using (var _wlock = await writerLock.LockAsync(cancellationToken))
+                {
+                    if (!await Interleaver(cancellationToken)) throw new ClosedException();
+                }
+
                 using var _lock = await readerLock.LockAsync(cancellationToken);
 
                 var frameInfo = await StartReceive(cancellationToken);
@@ -151,13 +157,15 @@ namespace Hydra
             cancellationToken = cts.Token;
 
             var tcs = new TaskCompletionSource();
-            cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
-
             byte ping = this.ping++;
-            pings[ping] = tcs;
 
             using var _lock = await writerLock.LockAsync(cancellationToken);
+            if (!await Interleaver(cancellationToken)) throw new ClosedException();
+
             await writer.WriteSizedMessage(WebSocketOpcode.Ping, new SingleByteStream(ping), 1, cancellationToken);
+
+            cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
+            pings[ping] = tcs;
 
             return tcs.Task;
         }
@@ -252,6 +260,7 @@ namespace Hydra
 
         private bool StartClose() => Interlocked.CompareExchange(ref state, closingState, openState) == openState;
 
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         private async ValueTask<bool> Interleaver(CancellationToken cancellationToken)
         {
             while (interleaved.TryDequeue(out var frame))
@@ -283,6 +292,8 @@ namespace Hydra
         public async ValueTask DisposeAsync()
         {
             if (currentStream is not null) await currentStream.DisposeAsync();
+            await Close();
+
             foreach (var (_, body) in interleaved) body.Dispose();
             foreach (var (_, tcs) in pings) tcs.TrySetCanceled();
 
