@@ -136,7 +136,7 @@ namespace Hydra
             }
         }
 
-        public async ValueTask<Task?> Ping(CancellationToken cancellationToken = default)
+        public async Task<Task?> Ping(CancellationToken cancellationToken = default)
         {
             if (!Writeable) return null;
 
@@ -155,7 +155,7 @@ namespace Hydra
             return tcs.Task;
         }
 
-        public async ValueTask<bool> Close(WebSocketCloseMessage message = new(), CancellationToken cancellationToken = default)
+        public async Task<bool> Close(WebSocketCloseMessage message = new(), CancellationToken cancellationToken = default)
         {
             if (Closed || !StartClose()) return false;
 
@@ -313,7 +313,6 @@ namespace Hydra
 
             return buffer;
         }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint BytesToPing(Span<byte> bytes)
         {

@@ -26,7 +26,7 @@ namespace Hydra.WebSocket13
         }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public async ValueTask WriteSizedMessage(WebSocketOpcode opcode, Stream body, long length, CancellationToken cancellationToken)
+        public async Task WriteSizedMessage(WebSocketOpcode opcode, Stream body, long length, CancellationToken cancellationToken)
         {
             int frameInfoLength = FrameInfoLength(length);
             var memory = Writer.GetMemory(frameInfoLength)[..frameInfoLength];
@@ -39,7 +39,7 @@ namespace Hydra.WebSocket13
         }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public async ValueTask WriteUnsizedMessage(WebSocketOpcode opcode, Stream body, Interleaver? interleaver, CancellationToken cancellationToken)
+        public async Task WriteUnsizedMessage(WebSocketOpcode opcode, Stream body, Interleaver? interleaver, CancellationToken cancellationToken)
         {
             while (true)
             {
@@ -70,7 +70,7 @@ namespace Hydra.WebSocket13
         }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public async ValueTask WriteMemoryMessage(WebSocketOpcode opcode, Memory<byte> body, CancellationToken cancellationToken)
+        public async Task WriteMemoryMessage(WebSocketOpcode opcode, Memory<byte> body, CancellationToken cancellationToken)
         {
             int frameInfoLength = FrameInfoLength(body.Length);
             int totalLength = frameInfoLength + body.Length;
@@ -84,7 +84,7 @@ namespace Hydra.WebSocket13
         }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public async ValueTask WriteCloseMessage(ushort? code, string? reason, CancellationToken cancellationToken)
+        public async Task WriteCloseMessage(ushort? code, string? reason, CancellationToken cancellationToken)
         {
             int bodyLength = code is not null ? reason is not null ? reason.Utf8Length() + 2 : 2 : 0;
             int frameInfoLength = FrameInfoLength(bodyLength);

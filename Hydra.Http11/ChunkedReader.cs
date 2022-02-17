@@ -28,7 +28,7 @@ namespace Hydra.Http11
         /// or <see cref="ParseStatus.Incomplete"/> if parsing cannot complete
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public async ValueTask<ParseResult<int>> ReadChunkSize(bool prefixNewline = false, CancellationToken cancellationToken = default)
+        public async Task<ParseResult<int>> ReadChunkSize(bool prefixNewline = false, CancellationToken cancellationToken = default)
         {
             while (true)
             {

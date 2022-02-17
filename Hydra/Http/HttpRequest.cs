@@ -105,7 +105,7 @@ namespace Hydra
         /// Reads the request headers if they haven't been yet
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public async ValueTask ReadHeaders(CancellationToken cancellationToken = default)
+        public async Task ReadHeaders(CancellationToken cancellationToken = default)
         {
             if (body != null) return;
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken);
@@ -172,8 +172,7 @@ namespace Hydra
         /// Drains the headers and body to prepare the underlying connection for the next request
         /// </summary>
         /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        internal async ValueTask Drain()
+        internal async Task Drain()
         {
             await ReadHeaders();
             await body!.Drain(CancellationToken);
@@ -194,7 +193,7 @@ namespace Hydra
         /// <param name="socket">Underlying socket the request originated from</param>
         /// <returns>An instance of <see cref="HttpRequest"/> or null if the connection is closed before receiving a full request</returns>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public static async ValueTask<HttpRequest?> ReadRequest(this HttpReader reader, Socket socket, CancellationToken cancellationToken = default)
+        public static async Task<HttpRequest?> ReadRequest(this HttpReader reader, Socket socket, CancellationToken cancellationToken = default)
         {
             var startLineResult = await reader.ReadStartLine(cancellationToken);
             if (!startLineResult.Complete(out var startLine)) return null;
@@ -214,7 +213,7 @@ namespace Hydra
         /// <param name="headers">Instance to write the read headers to</param>
         /// <returns>true on success or false if the connection is closed before receiving the full headers</returns>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public static async ValueTask<bool> ReadHeaders(this AbstractReader reader, HttpHeaders headers, CancellationToken cancellationToken = default)
+        public static async Task<bool> ReadHeaders(this AbstractReader reader, HttpHeaders headers, CancellationToken cancellationToken = default)
         {
             while (true)
             {

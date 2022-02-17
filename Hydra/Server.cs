@@ -22,8 +22,8 @@ namespace Hydra
         /// </summary>
         /// <param name="request">The received HTTP request</param>
         /// <returns>The HTTP response to send back</returns>
-        public delegate ValueTask<HttpResponse> HttpHandler(HttpRequest request);
-        public delegate ValueTask WebSocketHandler(WebSocket socket);
+        public delegate Task<HttpResponse> HttpHandler(HttpRequest request);
+        public delegate Task WebSocketHandler(WebSocket socket);
 
         /// <summary>
         /// Listener used to accept clients
@@ -197,6 +197,13 @@ namespace Hydra
 
                     try
                     {
+                        if (response is WebSocketResponse wsr)
+                        {
+                            var ws = new WebSocket(socket, reader, writer, 16, cancellationToken);
+                            await wsr.handler(ws);
+                            return;
+                        }
+
                         // returns true if we need to close
                         if (await httpWriter.WriteResponse(response, request, cancellationToken)) return;
                         // need to make sure the whole request has been read before parsing the next one

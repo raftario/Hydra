@@ -4,7 +4,7 @@ namespace Hydra.Example
 {
     public static partial class Handlers
     {
-        public static ValueTask<HttpResponse> Hello(HttpRequest request)
+        public static Task<HttpResponse> Hello(HttpRequest request)
         {
             string hello = "Hello, Hydra!";
             var body = new MemoryStream(Encoding.UTF8.GetBytes(hello));

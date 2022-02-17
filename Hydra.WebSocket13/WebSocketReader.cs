@@ -30,7 +30,7 @@ namespace Hydra.WebSocket13
         private const byte lengthMask = 0b0111_1111;
         
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public async ValueTask<FrameInfo?> ReadFrameInfo(CancellationToken cancellationToken = default)
+        public async Task<FrameInfo?> ReadFrameInfo(CancellationToken cancellationToken = default)
         {
             // this is the max possible frame info size
             var result = await Reader.ReadAtLeastAsync(14, cancellationToken);

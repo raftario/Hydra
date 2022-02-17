@@ -79,7 +79,7 @@ namespace Hydra.Http11
         /// </summary>
         /// <returns>A task that completes once the body is fully written to the underlying connection</returns>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public async ValueTask Send(Stream body, CancellationToken cancellationToken = default)
+        public async Task Send(Stream body, CancellationToken cancellationToken = default)
         {
             var memory = Writer.GetMemory(2);
             memory.Span[0] = (byte)'\r';

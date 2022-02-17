@@ -2,7 +2,7 @@
 {
     public static partial class Handlers
     {
-        public static ValueTask<HttpResponse> File(HttpRequest request)
+        public static Task<HttpResponse> File(HttpRequest request)
         {
             var body = new FileStream("LICENSE", FileMode.Open);
 

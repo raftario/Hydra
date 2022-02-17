@@ -85,7 +85,7 @@ namespace Hydra
         /// <param name="cancellationToken"></param>
         /// <returns>true if the underlying connection needs to be closed after sending the response</returns>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public static async ValueTask<bool> WriteResponse(this HttpWriter writer, HttpResponse response, HttpRequest request, CancellationToken cancellationToken = default)
+        public static async Task<bool> WriteResponse(this HttpWriter writer, HttpResponse response, HttpRequest request, CancellationToken cancellationToken = default)
         {
             // transfer encodings are not supported by HTTP/1.0
             if (request.Version == HttpVersion.Http10 && response.Headers.ContainsKey("Transfer-Encoding"))
