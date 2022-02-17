@@ -4,10 +4,11 @@ using Hydra.Example;
 string? handlerName = args.Length >= 1 ? args[0] : null;
 Server.HttpHandler handler = handlerName?.ToLower() switch
 {
-    "hello" => Handlers.Hello,
-    "headers" => Handlers.Headers,
-    "file" => Handlers.File,
     "cats" => Handlers.Cats,
+    "chat" => Handlers.Chat,
+    "file" => Handlers.File,
+    "headers" => Handlers.Headers,
+    "hello" => Handlers.Hello,
     _ => Handlers.Echo,
 };
 

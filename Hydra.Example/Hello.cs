@@ -13,7 +13,7 @@ namespace Hydra.Example
             response.Headers["Content-Length"] = body.Length.ToString();
             response.Headers["Content-Type"] = "text/plain; encoding=utf-8";
 
-            return ValueTask.FromResult(response);
+            return Task.FromResult(response);
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Pipelines;
+using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -38,6 +39,8 @@ namespace Hydra
 
         internal WebSocketCloseMessage closeMessage = new();
 
+        public EndPoint? Remote => socket.RemoteEndPoint;
+
         public bool Closed => state is closedState;
         public bool Readable => state is openState;
         public bool Writeable => state is openState;
@@ -60,6 +63,8 @@ namespace Hydra
 
             CancellationToken = cancellationToken;
         }
+
+        public static HttpResponse Response(Server.WebSocketHandler handler) => new WebSocketResponse(handler);
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public async Task<bool> Send(WebSocketMessage message, CancellationToken cancellationToken = default)
@@ -292,7 +297,7 @@ namespace Hydra
                     frameInfo.Value.MaskingKey);
             }
             else if (frameInfo.Value.Opcode is not WebSocketOpcode.Text and not WebSocketOpcode.Binary) throw new NonFrameableMessageFramedException();
-            else currentStream = null;
+            else currentStream = null; // TODO: Fragmented stream
 
             return frameInfo;
         }

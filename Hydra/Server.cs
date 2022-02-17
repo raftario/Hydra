@@ -199,6 +199,8 @@ namespace Hydra
                     {
                         if (response is WebSocketResponse wsr)
                         {
+                            // TODO: Handshake
+
                             var ws = new WebSocket(socket, reader, writer, 16, cancellationToken);
                             await wsr.handler(ws);
                             return;
