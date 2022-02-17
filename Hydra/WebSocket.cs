@@ -5,30 +5,38 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Pipelines;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Hydra
 {
     public class WebSocket : IAsyncDisposable
     {
+        private readonly Socket socket;
         private readonly WebSocketReader reader;
         private readonly WebSocketWriter writer;
+
         private readonly SemaphoreSlim readerLock = new(1);
         private readonly SemaphoreSlim writerLock = new(1);
+        private readonly SemaphoreSlim interleaveLock = new(1);
+
         private Stream? currentStream = null;
 
-        internal readonly ConcurrentQueue<(FrameInfo, DisposableBuffer<byte>)> interleaved = new();
-        private readonly ConcurrentDictionary<byte, TaskCompletionSource> pings = new();
-        private byte ping = 0;
+        private readonly Channel<(FrameInfo Info, DisposableBuffer<byte> Body)> backgroundFrames;
+        private readonly Task backgroundTask;
+
+        private readonly ConcurrentDictionary<uint, TaskCompletionSource> pings = new();
+        private uint ping = 0;
 
         private const int openState = 0;
         private const int closingState = 1;
         private const int closedState = 2;
         internal int state = openState;
 
-        internal WebSocketCloseMessage closeMessage = default;
+        internal WebSocketCloseMessage closeMessage = new();
 
         public bool Closed => state is closedState;
         public bool Readable => state is openState;
@@ -37,17 +45,26 @@ namespace Hydra
         public WebSocketCloseMessage CloseMessage => Closed ? closeMessage : throw new InvalidOperationException("Can't access close message before connection is closed");
         public CancellationToken CancellationToken { get; }
 
-        internal WebSocket(PipeReader reader, PipeWriter writer, CancellationToken cancellationToken)
+        internal WebSocket(Socket socket, PipeReader reader, PipeWriter writer, int backgroundChannelCapacity, CancellationToken cancellationToken)
         {
+            this.socket = socket;
             this.reader = new(reader);
             this.writer = new(writer);
+
+            backgroundFrames = Channel.CreateBounded<(FrameInfo, DisposableBuffer<byte>)>(new BoundedChannelOptions(backgroundChannelCapacity)
+            {
+                SingleReader = true,
+                SingleWriter = false,
+            });
+            backgroundTask = Task.Run(BackgroundTask, cancellationToken);
+
             CancellationToken = cancellationToken;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public async ValueTask Send(WebSocketMessage message, CancellationToken cancellationToken = default)
+        public async Task<bool> Send(WebSocketMessage message, CancellationToken cancellationToken = default)
         {
-            if (!Writeable) throw new ClosedException();
+            if (!Writeable) return false;
 
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken);
             cancellationToken = cts.Token;
@@ -63,10 +80,8 @@ namespace Hydra
                 length = null;
             }
 
-            using (var _lock = await writerLock.LockAsync(cancellationToken))
+            using (var _lock = await FullWriterLock(cancellationToken))
             {
-                if (!await Interleaver(cancellationToken)) throw new ClosedException();
-
                 if (length is not null)
                 {
                     await writer.WriteSizedMessage(
@@ -80,68 +95,40 @@ namespace Hydra
                     await writer.WriteUnsizedMessage(
                         message.Opcode,
                         message.Body,
-                        Interleaver,
+                        Interleave,
                         cancellationToken);
                 }
             }
 
             await message.Body.DisposeAsync();
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public async ValueTask<WebSocketMessage?> Receive(CancellationToken cancellationToken = default)
+        public async Task<WebSocketMessage?> Receive(CancellationToken cancellationToken = default)
         {
-            if (!Readable) throw new ClosedException();
+            if (!Readable) return null;
 
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken);
             cancellationToken = cts.Token;
 
             while (true)
             {
-                using (var _wlock = await writerLock.LockAsync(cancellationToken))
-                {
-                    if (!await Interleaver(cancellationToken)) throw new ClosedException();
-                }
-
                 using var _lock = await readerLock.LockAsync(cancellationToken);
 
                 var frameInfo = await StartReceive(cancellationToken);
                 if (frameInfo is null) return null;
 
-                if (frameInfo.Value.Opcode == WebSocketOpcode.Ping)
-                {
-                    using var _wlock = await writerLock.LockAsync(cancellationToken);
-
-                    await writer.WriteSizedMessage(
-                        WebSocketOpcode.Pong,
-                        currentStream,
-                        frameInfo.Value.Length,
-                        cancellationToken);
-                }
-                else if (frameInfo.Value.Opcode == WebSocketOpcode.Pong)
-                {
-                    if (frameInfo.Value.Length != 1) continue;
-
-                    byte? ping = await currentStream.ReadByteAsync(cancellationToken);
-                    if (ping is null)
-                    {
-                        state = closedState;
-                        return null;
-                    }
-
-                    if (pings.TryGetValue(ping.Value, out var tcs)) tcs.TrySetResult();
-                }
-                else if (frameInfo.Value.Opcode == WebSocketOpcode.Close)
+                if (frameInfo.Value.Opcode is WebSocketOpcode.Ping or WebSocketOpcode.Pong or WebSocketOpcode.Close)
                 {
                     int length = (int)frameInfo.Value.Length;
 
-                    using var buffer = ArrayPool<byte>.Shared.RentDisposable(length);
+                    var buffer = ArrayPool<byte>.Shared.RentDisposable(length);
                     var bodyBuffer = buffer[..length];
 
                     if (!await currentStream.ReadAllAsync(bodyBuffer, cancellationToken)) return null;
 
-                    await HandleClose(bodyBuffer, true, cancellationToken);
-                    return null;
+                    await backgroundFrames.Writer.WriteAsync((frameInfo.Value, buffer));
                 }
                 else if (frameInfo.Value.Opcode == WebSocketOpcode.Text) return new WebSocketTextMessage(currentStream);
                 else if (frameInfo.Value.Opcode == WebSocketOpcode.Binary) return new WebSocketBinaryMessage(currentStream);
@@ -149,38 +136,35 @@ namespace Hydra
             }
         }
 
-        public async ValueTask<Task> Ping(CancellationToken cancellationToken = default)
+        public async ValueTask<Task?> Ping(CancellationToken cancellationToken = default)
         {
-            if (!Writeable) throw new ClosedException();
+            if (!Writeable) return null;
 
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken);
             cancellationToken = cts.Token;
 
+            using var _lock = await FullWriterLock(cancellationToken);
+
+            using var buffer = PingBuffer();
+            await writer.WriteMemoryMessage(WebSocketOpcode.Ping, buffer[..4], cancellationToken);
+
             var tcs = new TaskCompletionSource();
-            byte ping = this.ping++;
-
-            using var _lock = await writerLock.LockAsync(cancellationToken);
-            if (!await Interleaver(cancellationToken)) throw new ClosedException();
-
-            await writer.WriteSizedMessage(WebSocketOpcode.Ping, new SingleByteStream(ping), 1, cancellationToken);
-
             cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
-            pings[ping] = tcs;
+            pings[ping++] = tcs;
 
             return tcs.Task;
         }
 
-        public async ValueTask Close(WebSocketCloseMessage message = new(), CancellationToken cancellationToken = default)
+        public async ValueTask<bool> Close(WebSocketCloseMessage message = new(), CancellationToken cancellationToken = default)
         {
-            if (Closed) throw new ClosedException();
-            if (!StartClose()) return;
+            if (Closed || !StartClose()) return false;
 
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken);
             cancellationToken = cts.Token;
 
             try
             {
-                using (var _wlock = await writerLock.LockAsync(cancellationToken))
+                using (var _wlock = await FullWriterLock(cancellationToken))
                 {
                     await writer.WriteCloseMessage(message.Code, message.Reason, cancellationToken);
                 }
@@ -189,7 +173,7 @@ namespace Hydra
                 while (true)
                 {
                     var frameInfo = await StartReceive(cancellationToken);
-                    if (frameInfo is null) return;
+                    if (frameInfo is null) return false;
                     if (frameInfo.Value.Opcode != WebSocketOpcode.Close) continue;
 
                     int length = (int)frameInfo.Value.Length;
@@ -197,15 +181,91 @@ namespace Hydra
                     using var buffer = ArrayPool<byte>.Shared.RentDisposable(length);
                     var bodyBuffer = buffer[..length];
 
-                    if (!await currentStream.ReadAllAsync(bodyBuffer, cancellationToken)) return;
+                    if (!await currentStream.ReadAllAsync(bodyBuffer, cancellationToken)) return false;
                     WebSocketReader.ParseCloseBody(bodyBuffer.Span, out ushort? code, out string? reason);
 
                     closeMessage = new(code, reason);
                 }
-            } finally { state = closedState; }
+            }
+            finally
+            { 
+                state = closedState;
+                socket.Shutdown(SocketShutdown.Both);
+                await socket.DisconnectAsync(false, cancellationToken);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        private async Task BackgroundTask()
+        {
+            await foreach (var (info, body) in backgroundFrames.Reader.ReadAllAsync())
+            {
+                try
+                {
+                    if (info.Opcode == WebSocketOpcode.Ping)
+                    {
+                        using var _lock = await InterleavedWriterLock(CancellationToken);
+                        await writer.WriteMemoryMessage(WebSocketOpcode.Pong, body, CancellationToken);
+                    }
+                    else if (info.Opcode == WebSocketOpcode.Pong
+                        && body.Length == 4
+                        && pings.TryGetValue(BytesToPing(body), out var tcs))
+                    {
+                        tcs.TrySetResult();
+                    }
+                    else if (info.Opcode == WebSocketOpcode.Close)
+                    {
+                        if (!StartClose()) return;
+
+                        WebSocketReader.ParseCloseBody(body, out ushort? code, out string? reason);
+                        closeMessage = new(code, reason);
+
+                        try
+                        {
+                            using var _lock = await InterleavedWriterLock(CancellationToken);
+                            await writer.WriteCloseMessage(code, reason, CancellationToken);
+                            return;
+                        }
+                        finally
+                        {
+                            state = closedState;
+                            socket.Shutdown(SocketShutdown.Both);
+                            await socket.DisconnectAsync(false, CancellationToken);
+                        }
+                    }
+                }
+                finally { body.Dispose(); }
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private async ValueTask<bool> Interleave(CancellationToken cancellationToken)
+        {
+            using var _lock = await interleaveLock.LockAsync(cancellationToken);
+            writerLock.Release();
+            await Task.Yield();
+            await writerLock.WaitAsync(cancellationToken);
+            return Writeable;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private async ValueTask<SemaphoreSlimLock> FullWriterLock(CancellationToken cancellationToken)
+        {
+            var wlock = await writerLock.LockAsync(cancellationToken);
+            try
+            {
+                await interleaveLock.LockAndReleaseAsync(cancellationToken);
+            }
+            catch
+            {
+                wlock.Dispose();
+                throw;
+            }
+            return wlock;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private ValueTask<SemaphoreSlimLock> InterleavedWriterLock(CancellationToken cancellationToken) => writerLock.LockAsync(cancellationToken);
+
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         private async ValueTask<FrameInfo?> StartReceive(CancellationToken cancellationToken)
         {
             if (currentStream is not null)
@@ -237,71 +297,51 @@ namespace Hydra
             return frameInfo;
         }
 
-        private async ValueTask HandleClose(Memory<byte> body, bool lockk, CancellationToken cancellationToken)
-        {
-            if (!StartClose()) return;
-
-            WebSocketReader.ParseCloseBody(body.Span, out ushort? code, out string? reason);
-            closeMessage = new(code, reason);
-
-            var write = () => writer.WriteCloseMessage(code, reason, cancellationToken);
-
-            try
-            {
-                if (lockk)
-                {
-                    using var _lock = await writerLock.LockAsync(cancellationToken);
-                    await write();
-                }
-                else await write();
-            }
-            finally { state = closedState; }
-        }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool StartClose() => Interlocked.CompareExchange(ref state, closingState, openState) == openState;
 
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private async ValueTask<bool> Interleaver(CancellationToken cancellationToken)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private DisposableBuffer<byte> PingBuffer()
         {
-            while (interleaved.TryDequeue(out var frame))
-            {
-                var (info, body) = frame;
-                try
-                {
-                    if (info.Opcode == WebSocketOpcode.Ping)
-                    {
-                        await writer.WriteMemoryMessage(WebSocketOpcode.Pong, body, cancellationToken);
-                    }
-                    else if (info.Opcode == WebSocketOpcode.Pong
-                        && body.Length == 1
-                        && pings.TryGetValue(body[0], out var tcs))
-                    {
-                        tcs.TrySetResult();
-                    }
-                    else if (info.Opcode == WebSocketOpcode.Close)
-                    {
-                        await HandleClose(body, false, cancellationToken);
-                        return false;
-                    }
-                }
-                finally { body.Dispose(); }
-            }
-            return true;
+            var pingBytes = ping.AsRawSpan();
+            var buffer = ArrayPool<byte>.Shared.RentDisposable(4);
+
+            buffer[0] = pingBytes[0];
+            buffer[1] = pingBytes[1];
+            buffer[2] = pingBytes[2];
+            buffer[3] = pingBytes[3];
+
+            return buffer;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint BytesToPing(Span<byte> bytes)
+        {
+            uint ping = 0;
+            var pingBytes = ping.AsRawSpan();
+
+            pingBytes[0] = bytes[0];
+            pingBytes[1] = bytes[1];
+            pingBytes[2] = bytes[2];
+            pingBytes[3] = bytes[3];
+
+            return ping;
         }
 
         public async ValueTask DisposeAsync()
         {
             if (currentStream is not null) await currentStream.DisposeAsync();
-            await Close();
 
-            foreach (var (_, body) in interleaved) body.Dispose();
+            backgroundFrames.Writer.Complete();
+            await backgroundTask;
+
+            await foreach (var (_, body) in backgroundFrames.Reader.ReadAllAsync()) body.Dispose();
             foreach (var (_, tcs) in pings) tcs.TrySetCanceled();
 
             readerLock.Dispose();
             writerLock.Dispose();
+            interleaveLock.Dispose();
             GC.SuppressFinalize(this);
         }
-
-        public class ClosedException : Exception { }
     }
 }

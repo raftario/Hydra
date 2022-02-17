@@ -84,6 +84,13 @@ namespace Hydra.Core
             await s.WaitAsync(cancellationToken);
             return new(s);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static async ValueTask LockAndReleaseAsync(this SemaphoreSlim s, CancellationToken cancellationToken = default)
+        {
+            await s.WaitAsync(cancellationToken);
+            s.Release();
+        }
     }
     public readonly record struct SemaphoreSlimLock(SemaphoreSlim Semaphore) : IDisposable
     {
@@ -100,6 +107,8 @@ namespace Hydra.Core
         public static implicit operator T[](DisposableBuffer<T> buffer) => buffer.Buffer;
         public static implicit operator Memory<T>(DisposableBuffer<T> buffer) => buffer.Buffer.AsMemory();
         public static implicit operator Span<T>(DisposableBuffer<T> buffer) => buffer.Buffer.AsSpan();
+        public static implicit operator ReadOnlyMemory<T>(DisposableBuffer<T> buffer) => buffer.Buffer.AsMemory();
+        public static implicit operator ReadOnlySpan<T>(DisposableBuffer<T> buffer) => buffer.Buffer.AsSpan();
 
         public T this[Index index] {
             get => Buffer[index];

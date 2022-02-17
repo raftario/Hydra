@@ -124,8 +124,13 @@ namespace Hydra
                         throw new HttpResponse.InvalidException("`Content-Length` header present in a response without a body", request, response);
                 }
 
-                await response.Body.DisposeAsync();
-                response.Body = Stream.Null;
+                try
+                {
+                    if (response.Body.Length > 0) throw new HttpResponse.InvalidException("Body in a response that can't have one", request, response);
+                } catch
+                {
+                    throw new HttpResponse.InvalidException("Body of unknown length in a response that can't have a one", request, response);
+                }
             }
             if (needsClose)
             {

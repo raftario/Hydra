@@ -144,9 +144,9 @@ namespace Hydra
         }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private async Task HttpClient(Socket client, CancellationToken cancellationToken)
+        private async Task HttpClient(Socket socket, CancellationToken cancellationToken)
         {
-            Stream stream = new NetworkStream(client, true);
+            Stream stream = new NetworkStream(socket, false);
             if (cert is not null)
             {
                 var tlsStream = new SslStream(stream, false);
@@ -169,7 +169,7 @@ namespace Hydra
 
                     try
                     {
-                        request = await httpReader.ReadRequest(client, cancellationToken);
+                        request = await httpReader.ReadRequest(socket, cancellationToken);
                         if (request is null) return;
 
                         response = await httpHandler(request);
@@ -207,7 +207,7 @@ namespace Hydra
                     finally
                     {
                         await request.Body.DisposeAsync();
-                        if (response.Body is not null) await response.Body.DisposeAsync();
+                        await response.Body.DisposeAsync();
                     }
                 }
             }
@@ -219,6 +219,8 @@ namespace Hydra
             finally
             {
                 await stream.DisposeAsync();
+                socket.Shutdown(SocketShutdown.Both);
+                socket.Close();
             }
         }
 

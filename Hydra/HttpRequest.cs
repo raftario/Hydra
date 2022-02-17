@@ -49,11 +49,7 @@ namespace Hydra
         /// <exception cref="HeadersNotReadException">
         /// Thrown when trying to access the body before the headers have been read
         /// </exception>
-        public Stream Body
-        {
-            get => body ?? throw new HeadersNotReadException();
-            private set => body = value;
-        }
+        public Stream Body => body ?? throw new HeadersNotReadException();
         /// <summary>
         /// Request body encoding
         /// 
