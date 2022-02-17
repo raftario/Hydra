@@ -128,7 +128,7 @@ namespace Hydra
 
                     if (!await currentStream.ReadAllAsync(bodyBuffer, cancellationToken)) return null;
 
-                    await backgroundFrames.Writer.WriteAsync((frameInfo.Value, buffer));
+                    await backgroundFrames.Writer.WriteAsync((frameInfo.Value, buffer), cancellationToken);
                 }
                 else if (frameInfo.Value.Opcode == WebSocketOpcode.Text) return new WebSocketTextMessage(currentStream);
                 else if (frameInfo.Value.Opcode == WebSocketOpcode.Binary) return new WebSocketBinaryMessage(currentStream);

@@ -1,5 +1,4 @@
 ﻿using Hydra.Http11;
-using Hydra.WebSocket13;
 
 namespace Hydra
 {
@@ -25,8 +24,4 @@ namespace Hydra
     /// An exception thrown by the server if it can't determine the length of a request body.
     /// </summary>
     public class UnknownBodyLengthException : HttpBadRequestException { }
-
-    public class LoneContinuationFrameException : WebSocketInvalidFrameException { }
-    public class NonFrameableMessageFramedException : WebSocketInvalidFrameException { }
-    public class UnmaskedBodyException : WebSocketInvalidFrameException { }
 }
