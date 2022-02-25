@@ -97,6 +97,7 @@ namespace Hydra
             Method = other.Method;
             Uri = other.Uri;
             Version = other.Version;
+            Headers = other.Headers;
             Encoding = other.Encoding;
             CancellationToken = other.CancellationToken;
         }
