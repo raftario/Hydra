@@ -106,7 +106,7 @@ namespace Hydra
             // if the client is HTTP/1.0 or indicates it wants the connection to close we need to close the connection once the body is set
             bool needsClose = request.Version == HttpVersion.Http10
                 || (request.Headers.TryGetValue("Connection", out var conn) && conn.ToString().Equals("close", StringComparison.OrdinalIgnoreCase));
-            // if the response has transfer encodings and the last one isn't chunked the client can't know the length and need to close the connection once the body is sent
+            // if the response has transfer encodings and the last one isn't chunked the client can't know the length and we need to close the connection once the body is sent
             needsClose = needsClose || (!noBody
                 && response.Headers.TryGetValue("Transfer-Encoding", out var te)
                 && !te.ToString().TrimEnd().EndsWith("chunked", StringComparison.OrdinalIgnoreCase));

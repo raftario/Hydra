@@ -188,19 +188,31 @@ namespace Hydra
                         await httpWriter.Send(Stream.Null, cancellationToken);
                         return;
                     }
+                    catch (HttpMethodNotAllowedException)
+                    {
+                        HttpWriteErrorResponse(httpWriter, 405, "Method Not Allowed");
+                        await httpWriter.Send(Stream.Null, cancellationToken);
+                        return;
+                    }
                     catch (HttpNotImplementedException)
                     {
                         HttpWriteErrorResponse(httpWriter, 501, "Not Implemented");
                         await httpWriter.Send(Stream.Null, cancellationToken);
                         return;
                     }
+                    catch (HttpUpgradeRequiredException ex)
+                    {
+                        HttpWriteErrorResponse(httpWriter, 426, "Upgrade Required");
+                        httpWriter.WriteHeader("Upgrade", ex.Upgrade);
+                        if (ex is HttpWebSocketUpgradeRequiredException) httpWriter.WriteHeader("Sec-WebSocket-Version", "13");
+                        await httpWriter.Send(Stream.Null, cancellationToken);
+                        return;
+                    }
 
                     try
                     {
-
                         // returns true if we need to close
-                        if (await httpWriter.WriteResponse(response, request, cancellationToken) 
-                            && response is not WebSocketResponse) return;
+                        if (await httpWriter.WriteResponse(response, request, cancellationToken)) return;
                         
                         // need to make sure the whole request has been read before parsing the next one
                         await request.Drain();
