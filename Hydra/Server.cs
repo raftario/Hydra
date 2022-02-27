@@ -200,6 +200,12 @@ namespace Hydra
                         await httpWriter.Send(Stream.Null, cancellationToken);
                         return;
                     }
+                    catch (HttpRequestHeaderFieldsTooLargeException)
+                    {
+                        HttpWriteErrorResponse(httpWriter, 431, "Request Header Fields Too Large");
+                        await httpWriter.Send(Stream.Null, cancellationToken);
+                        return;
+                    }
                     catch (HttpUpgradeRequiredException ex)
                     {
                         HttpWriteErrorResponse(httpWriter, 426, "Upgrade Required");
@@ -224,7 +230,8 @@ namespace Hydra
                         }
                     }
                     catch (ConnectionClosedException) { return; }
-                    catch (HttpBadRequestException) { return; }
+                    catch (HttpBadRequestException) { return; } // might happen while draining the request if the headers have never been read
+                    catch (HttpRequestHeaderFieldsTooLargeException) { return; } // might happen while draining the request if the headers have never been read
                     finally
                     {
                         await request.Body.DisposeAsync();
