@@ -18,7 +18,7 @@ namespace Hydra
             
             Headers["Upgrade"] = "websocket";
             Headers["Connection"] = "Upgrade";
-            Headers["Sec-WebSocket-Accept"] =Convert.ToBase64String(acceptKeyBytes);
+            Headers["Sec-WebSocket-Accept"] = Convert.ToBase64String(acceptKeyBytes);
         }
     }
 }
