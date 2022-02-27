@@ -197,19 +197,19 @@ namespace Hydra
 
                     try
                     {
-                        if (response is WebSocketResponse wsr)
-                        {
-                            // TODO: Handshake
-
-                            var ws = new WebSocket(socket, reader, writer, 16, cancellationToken);
-                            await wsr.handler(ws);
-                            return;
-                        }
 
                         // returns true if we need to close
-                        if (await httpWriter.WriteResponse(response, request, cancellationToken)) return;
+                        if (await httpWriter.WriteResponse(response, request, cancellationToken) 
+                            && response is not WebSocketResponse) return;
+                        
                         // need to make sure the whole request has been read before parsing the next one
                         await request.Drain();
+
+                        if (response is WebSocketResponse wsr) 
+                        {
+                            var ws = new WebSocket(socket, reader, writer, 16, cancellationToken);
+                            await wsr.handler(ws);
+                        }
                     }
                     catch (ConnectionClosedException) { return; }
                     catch (HttpBadRequestException) { return; }

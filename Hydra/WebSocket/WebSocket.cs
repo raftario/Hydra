@@ -64,7 +64,29 @@ namespace Hydra
             CancellationToken = cancellationToken;
         }
 
-        public static HttpResponse Response(Server.WebSocketHandler handler) => new WebSocketResponse(handler);
+        /// <summary>
+        /// Creates a response suitable for upgrading a request to a <see cref="WebSocket"/>.
+        /// </summary>
+        /// <param name="request">HTTP request to validate the WSS headers with</param>
+        /// <param name="handler">Delegate which will process the <see cref="WebSocket"/> once the handshake
+        /// is complete</param>
+        /// <returns>An HTTP response for the upgrade, or alternatively a code 400 response any of the necessary
+        /// WSS headers are missing or incorrect</returns>
+        public static HttpResponse Response(HttpRequest request, Server.WebSocketHandler handler)
+        {
+            // Verify all of the WebSocket headers
+            if (!request.Headers.TryGetValue("Sec-WebSocket-Key", out var clientKey)
+                || (request.Headers.TryGetValue("Connection", out var conn)
+                    && conn != "Upgrade") 
+                || (request.Headers.TryGetValue("Upgrade", out var upgrade)
+                    && upgrade != "websocket")
+                || (request.Headers.TryGetValue("Sec-WebSocket-Version", out var webSocketVersion)
+                    && webSocketVersion != "13")) // v13 is the only supported version by Hydra
+                return new HttpResponse(400);
+            
+            
+            return new WebSocketResponse(clientKey, handler);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public async Task<bool> Send(WebSocketMessage message, CancellationToken cancellationToken = default)
