@@ -123,7 +123,7 @@ namespace Hydra
         private void Validate()
         {
             // HTTP/1.1 requests must contain a Host header
-            if (Version == Http11.HttpVersion.Http10 && (!Headers.TryGetValue("Host", out var host) || host.Count > 1)) throw new InvalidHostException();
+            if (Version == Http11.HttpVersion.Http11 && (!Headers.TryGetValue("Host", out var host) || host.Count > 1)) throw new InvalidHostException();
 
             // requests containing both Transfer-Encoding and Content-Length headers are invalid and should be rejected
             if (Headers.ContainsKey("Transfer-Encoding") && Headers.ContainsKey("Content-Length")) throw new TransferEncodingAndContentLengthException();

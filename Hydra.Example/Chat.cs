@@ -5,7 +5,7 @@ namespace Hydra.Example
 {
     public static partial class Handlers
     {
-        public static Task<HttpResponse> Chat(HttpRequest request) => Task.FromResult(WebSocket.Response(Example.Chat.Handler));
+        public static Task<HttpResponse> Chat(HttpRequest request) => Task.FromResult(WebSocket.Response(request, Example.Chat.Handler));
     }
 
     internal static class Chat
