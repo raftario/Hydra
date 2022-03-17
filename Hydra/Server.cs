@@ -169,6 +169,8 @@ namespace Hydra
 
                     try
                     {
+                        if (!socket.Connected) return;
+
                         request = await httpReader.ReadRequest(socket, cancellationToken);
                         if (request is null) return;
 
