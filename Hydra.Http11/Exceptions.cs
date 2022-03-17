@@ -14,6 +14,10 @@ namespace Hydra.Http11
     /// Family of exceptions which result in a 501 Not Implemented response
     /// </summary>
     public abstract class HttpNotImplementedException : Exception { }
+    /// <summary>
+    /// Family of exceptions which result in a 431 Request Header Fields Too Large response
+    /// </summary>
+    public abstract class HttpRequestHeaderFieldsTooLargeException : Exception { }
 
     /// <summary>
     /// An exception thrown when a chunk size is longer than the reader is willing to parse
@@ -56,13 +60,13 @@ namespace Hydra.Http11
     /// An exception thrown when the start line is longer than the reader is willing to parse
     /// </summary>
     public class StartLineTooLongException : HttpUriTooLongException { }
-
-    /// <summary>
-    /// An exception thrown when a signel header is longer than the reader is willing to parse
-    /// </summary>
-    public class HeaderTooLongException : HttpNotImplementedException { }
     /// <summary>
     /// An exception thrown when the listed protocol version is not supported by the parser
     /// </summary>
     public class UnsupportedVersionException : HttpNotImplementedException { }
+
+    /// <summary>
+    /// An exception thrown when a signel header is longer than the reader is willing to parse
+    /// </summary>
+    public class HeaderTooLongException : HttpRequestHeaderFieldsTooLargeException { }
 }
