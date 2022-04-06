@@ -1,4 +1,5 @@
 ﻿using Hydra.Core;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Pipelines;
@@ -41,7 +42,16 @@ namespace Hydra.Http11
         {
             while (true)
             {
-                var result = await Reader.ReadAsync(cancellationToken);
+                ReadResult result;
+                try
+                {
+                    result = await Reader.ReadAsync(cancellationToken);
+                }
+                catch (InvalidOperationException) // Thrown if already reached the end of the pipe
+                {
+                    return new(ParseStatus.Incomplete);
+                }
+                
                 var buffer = result.Buffer;
                 var bytes = buffer.Bytes();
                 var consumed = buffer.Start;
