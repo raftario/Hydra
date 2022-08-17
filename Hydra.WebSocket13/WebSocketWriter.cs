@@ -118,20 +118,20 @@ namespace Hydra.WebSocket13
                 location[1] = 126;
 
                 location[2] = (byte)((length & 0xFF00) >> 8);
-                location[3] = (byte)(length & 0xFF00);
+                location[3] = (byte)(length & 0x00FF);
             }
             else
             {
                 location[1] = 127;
 
-                location[2] = (byte)((length & (0xFF << (8 * 7))) >> (8 * 7));
-                location[3] = (byte)((length & (0xFF << (8 * 6))) >> (8 * 6));
-                location[4] = (byte)((length & (0xFF << (8 * 5))) >> (8 * 5));
-                location[5] = (byte)((length & (0xFF << (8 * 4))) >> (8 * 4));
-                location[6] = (byte)((length & (0xFF << (8 * 3))) >> (8 * 3));
-                location[7] = (byte)((length & (0xFF << (8 * 2))) >> (8 * 2));
-                location[8] = (byte)((length & (0xFF << (8 * 1))) >> (8 * 1));
-                location[9] = (byte)((length & (0xFF << (8 * 0))) >> (8 * 0));
+                location[2] = (byte)((length & (0xFFL << (8 * 7))) >> (8 * 7));
+                location[3] = (byte)((length & (0xFFL << (8 * 6))) >> (8 * 6));
+                location[4] = (byte)((length & (0xFFL << (8 * 5))) >> (8 * 5));
+                location[5] = (byte)((length & (0xFFL << (8 * 4))) >> (8 * 4));
+                location[6] = (byte)((length & (0xFFL << (8 * 3))) >> (8 * 3));
+                location[7] = (byte)((length & (0xFFL << (8 * 2))) >> (8 * 2));
+                location[8] = (byte)((length & (0xFFL << (8 * 1))) >> (8 * 1));
+                location[9] = (byte)((length & (0xFFL << (8 * 0))) >> (8 * 0));
             }
         }
 
