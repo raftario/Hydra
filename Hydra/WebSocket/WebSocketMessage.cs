@@ -10,6 +10,7 @@ namespace Hydra
 
         protected WebSocketMessage(WebSocketOpcode opcode, Stream body)
         {
+            Opcode = opcode;
             Body = body;
         }
     }
