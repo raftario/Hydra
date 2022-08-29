@@ -93,6 +93,7 @@ namespace Hydra
                     listener = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                     listener.Bind(new IPEndPoint(address, port));
                     listener.Listen();
+                    break;
                 }
                 catch (SocketException ex)
                 {
