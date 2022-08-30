@@ -245,7 +245,7 @@ namespace Hydra
             }
             finally
             {
-                if(stream != null) await stream.DisposeAsync();
+                if (stream is not null) await stream.DisposeAsync();
                 socket.Shutdown(SocketShutdown.Both);
                 socket.Close();
             }
