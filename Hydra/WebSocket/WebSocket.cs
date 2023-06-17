@@ -302,7 +302,8 @@ namespace Hydra
                 currentStream = new WebSocketMaskedStream(
                     new SizedStream(reader.Reader.AsStream(false),
                     (int)frameInfo.Value.Length),
-                    frameInfo.Value.MaskingKey);
+                    frameInfo.Value.MaskingKey,
+                    true);
             }
             else if (frameInfo.Value.Opcode is not WebSocketOpcode.Text and not WebSocketOpcode.Binary) throw new NonFrameableMessageFramedException();
             else currentStream = null; // TODO: Fragmented stream
