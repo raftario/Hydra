@@ -20,7 +20,7 @@ namespace Hydra
         /// </summary>
         /// <param name="stream">Stream to wrap</param>
         /// <param name="length">Length to limit to</param>
-        internal SizedStream(Stream stream, int length) : base(stream)
+        internal SizedStream(Stream stream, int length, bool ownStream = false) : base(stream, ownStream)
         {
             this.length = length;
         }

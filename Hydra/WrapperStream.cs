@@ -8,10 +8,12 @@ namespace Hydra
     internal abstract class WrapperStream : ReadOnlyStream
     {
         private readonly Stream stream;
+        private readonly bool ownStream;
 
-        protected WrapperStream(Stream stream)
+        protected WrapperStream(Stream stream, bool ownStream = false)
         {
             this.stream = stream;
+            this.ownStream = ownStream;
         }
 
         public override long Length => stream.Length;
@@ -23,7 +25,7 @@ namespace Hydra
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing) stream.Dispose();
+            if (ownStream && disposing) stream.Dispose();
             base.Dispose(disposing);
         }
         public override async ValueTask DisposeAsync()
