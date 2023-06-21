@@ -163,7 +163,7 @@ namespace Hydra
                     if (distinct.Length != 1 || !int.TryParse(distinct[0], out length)) throw new InvalidContentLengthException();
                 }
 
-                body = new SizedStream(reader.Stream, length);
+                body = new SizedStream(reader.Stream, length, false);
             }
             // if a request has neither Transfer-Encoding nor Content-Length headers it is assumed to have an empty body
             else body = Stream.Null;

@@ -10,7 +10,7 @@ namespace Hydra
     {
         private readonly WebSocketMasker masker;
 
-        internal WebSocketMaskedStream(Stream stream, uint maskingKey) : base(stream)
+        internal WebSocketMaskedStream(Stream stream, uint maskingKey) : base(stream, false)
         {
             masker = new(maskingKey);
         }
