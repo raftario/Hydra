@@ -10,7 +10,7 @@ namespace Hydra
         private readonly Stream stream;
         private readonly bool ownStream;
 
-        protected WrapperStream(Stream stream, bool ownStream = false)
+        protected WrapperStream(Stream stream, bool ownStream)
         {
             this.stream = stream;
             this.ownStream = ownStream;

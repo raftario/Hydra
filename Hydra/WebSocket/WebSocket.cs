@@ -301,7 +301,7 @@ namespace Hydra
             {
                 currentStream = new WebSocketMaskedStream(
                     new SizedStream(reader.Reader.AsStream(false),
-                    (int)frameInfo.Value.Length),
+                    (int)frameInfo.Value.Length, true),
                     frameInfo.Value.MaskingKey,
                     true);
             }
